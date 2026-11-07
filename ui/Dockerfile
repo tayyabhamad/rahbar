@@ -3,7 +3,12 @@
 # nginx-unprivileged already runs as uid 101 and writes pid/temp files under /tmp; our
 # nginx.conf does the same, so the pod can mount an emptyDir at /tmp and keep the root
 # filesystem read-only (STARTER.md, "Images and ports").
-FROM nginxinc/nginx-unprivileged:1.27-alpine
+FROM nginxinc/nginx-unprivileged:1.31.7-alpine
+
+# Patch Alpine packages (OpenSSL, brotli, curl ...) that the base image lags on; the
+# image runs as uid 101, so switch to root only for the upgrade.
+USER root
+RUN apk upgrade --no-cache
 
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY index.html /usr/share/nginx/html/index.html

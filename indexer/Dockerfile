@@ -14,6 +14,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # OCR for scanned pages: pytesseract needs the tesseract binary and English data,
 # pdf2image needs poppler (pdftoppm).
 RUN apt-get update \
+ && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng poppler-utils \
  && rm -rf /var/lib/apt/lists/*
 
