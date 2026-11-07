@@ -1,0 +1,18 @@
+# Failure mode A (extraction), local run 2026-11-08: the corpus extracted WITHOUT OCR
+# (tesseract is not installed on the laptop, OCR_ENABLED=false). Per document, after Extract+Clean:
+# source | pages | pages with no text (lost) | chars kept
+undergraduate-academic-rules-aug-2023.pdf | 26 | 24 | 190
+academic-rules-handbook-jun-2026.pdf | 58 | 5 | 89438
+prospectus-2026-academic-rules-and-regulations.pdf | 5 | 0 | 25410
+student-handbook-jun-2026.pdf | 64 | 4 | 126964
+annual-report-2019-20.pdf | 33 | 0 | 53241
+annual-report-2023-24.pdf | 85 | 0 | 214189
+fee-structure-page.html | 1 | 0 | 3745
+grading-page.html | 1 | 0 | 4898
+faculty-entrepreneurship-and-technical-start-ups-policy.pdf | 8 | 8 | 0
+
+# The ORIC start-ups policy lost all 8 pages and the 2023 rules lost 24 of 26, so the indexer writes
+# 0 and 1 chunks for them: every question about those documents abstains or lands elsewhere.
+# The indexer logs this per page as 'page has no text layer and OCR is unavailable' and per document
+# as 'extracted pdf' with lost_pages=N; in the cluster image (tesseract-ocr + poppler-utils) the
+# same pages are OCR'd and marked ocr=True.

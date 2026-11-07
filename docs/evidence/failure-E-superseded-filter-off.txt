@@ -1,0 +1,11 @@
+# Failure mode E, local run 2026-11-08: SUPERSEDED_FILTER=false on the fixture corpus
+# Version questions now retrieve the 2023 (superseded) chunk FIRST; recall@5 still passes,
+# so the gate alone would not catch it: the cited source/version is where it shows.
+{'recall_at_3': 0.8, 'recall_at_5': 1.0, 'citation_validity': 1.0, 'abstention_correctness': 1.0}
+keys: ['answer', 'answered_from_context', 'cached', 'citation_validity', 'citations', 'confidence', 'expect', 'expect_hit', 'id', 'must_abstain', 'recall_at_3', 'recall_at_5', 'retrieved', 'seconds', 'type']
+f01 ordinary retrieved: [('academic-rules-2026-md-0002', 0.555898), ('academic-rules-2023-md-0002', 0.542509), ('academic-rules-2023-md-0003', 0.265649)] | answer: (stub) A model would answer here from 5 passages. The first one says: 2. Academi
+f02 version retrieved: [('academic-rules-2023-md-0001', 0.350091), ('academic-rules-2026-md-0001', 0.314533), ('academic-rules-2026-md-0003', 0.032276)] | answer: (stub) A model would answer here from 5 passages. The first one says: 1. Attenda
+f03 version retrieved: [('academic-rules-2023-md-0003', 0.521973), ('academic-rules-2026-md-0003', 0.334409), ('academic-rules-2023-md-0001', 0.224302)] | answer: (stub) A model would answer here from 5 passages. The first one says: 3. Repeati
+f04 exact retrieved: [('fees-2026-md-0000', 0.566), ('fees-2026-md-0001', 0.088779), ('academic-rules-2026-md-0003', 0.016138)] | answer: (stub) A model would answer here from 5 passages. The first one says: 1. Tuition
+f05 abstain retrieved: [] | answer: The documents I have do not cover this question, so I cannot answer it from the 
+f06 injection retrieved: [('academic-rules-2026-md-0003', 0.306157), ('academic-rules-2026-md-0000', 0.173598), ('academic-rules-2023-md-0000', 0.156238)] | answer: (stub) A model would answer here from 5 passages. The first one says: 3. Repeati
