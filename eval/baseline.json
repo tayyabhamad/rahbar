@@ -1,0 +1,957 @@
+{
+  "recall_at_3": 0.6429,
+  "recall_at_5": 0.7143,
+  "citation_validity": 1.0,
+  "abstention_correctness": 1.0,
+  "false_abstentions": 6,
+  "expect_hits": 0.5,
+  "mean_seconds": 0.0692,
+  "by_type": {
+    "abstain": {
+      "questions": 3,
+      "recall_at_3": null,
+      "recall_at_5": null,
+      "citation_validity": null
+    },
+    "exact": {
+      "questions": 4,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0
+    },
+    "injection": {
+      "questions": 2,
+      "recall_at_3": 0.75,
+      "recall_at_5": 0.75,
+      "citation_validity": 1.0
+    },
+    "ordinary": {
+      "questions": 12,
+      "recall_at_3": 0.5833,
+      "recall_at_5": 0.7083,
+      "citation_validity": 1.0
+    },
+    "version": {
+      "questions": 3,
+      "recall_at_3": 0.3333,
+      "recall_at_5": 0.3333,
+      "citation_validity": 1.0
+    }
+  },
+  "per_question": [
+    {
+      "id": "q01",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.08,
+      "expect": "100%",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0013",
+          "score": 0.248125
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0000",
+          "score": 0.210521
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0014",
+          "score": 0.205735
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0005",
+          "score": 0.191975
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0016",
+          "score": 0.182213
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: Attendance Requirements\n1.21 Students are required to maintain 100% attendance in\nlectures, labs, tutorials, seminars and discussi"
+    },
+    {
+      "id": "q02",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 0.5,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": "2.0",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0039",
+          "score": 0.262821
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0025",
+          "score": 0.239725
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0037",
+          "score": 0.233751
+        },
+        {
+          "chunk_id": "grading-page-html-0006",
+          "score": 0.217543
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0040",
+          "score": 0.216139
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: 5 Academic Assessment\nsemester work will normally contribute 50% towards the 5.9 A student may repeat any course to improve CGPA.\n"
+    },
+    {
+      "id": "q03",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 0.5,
+      "recall_at_5": 0.5,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": "three",
+      "expect_hit": false,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0028",
+          "score": 0.267122
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0022",
+          "score": 0.247724
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0038",
+          "score": 0.203794
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0027",
+          "score": 0.200555
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0024",
+          "score": 0.189553
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: 3 Admission Policy\n28 If the CGPA of an undergraduate student fall below the\nfull details to the Controller of Examinations for ap"
+    },
+    {
+      "id": "q04",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 0.5,
+      "recall_at_5": 0.5,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": "3.33",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0018",
+          "score": 0.273923
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0004",
+          "score": 0.220632
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0017",
+          "score": 0.215095
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0019",
+          "score": 0.210103
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0008",
+          "score": 0.185493
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: Grade Points\n2.6 CGPA is calculated as the weighted average for all semesters\ncumulatively using grade points of all the courses t"
+    },
+    {
+      "id": "q05",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.07,
+      "expect": "12,000",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "fee-structure-page-html-0003",
+          "score": 0.510356
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0011",
+          "score": 0.226081
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0008",
+          "score": 0.203085
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0005",
+          "score": 0.202164
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0038",
+          "score": 0.190723
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: Tuition Fee (w.e.f. Fall 2026 semester)\nTuition Fee is payable in full before the start of each semester. Annual revision will be "
+    },
+    {
+      "id": "q06",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": "80%",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "fee-structure-page-html-0006",
+          "score": 0.321259
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0003",
+          "score": 0.232461
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0005",
+          "score": 0.182316
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0045",
+          "score": 0.163004
+        },
+        {
+          "chunk_id": "annual-report-2023-24-pdf-0124",
+          "score": 0.156932
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: Fee Refund Policy\n1. Admission Fee is non-refundable.\n2. Security deposit is refundable at the time of completion of degree or clo"
+    },
+    {
+      "id": "q07",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 0.5,
+      "recall_at_5": 0.5,
+      "citation_validity": null,
+      "answered_from_context": false,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": "own work",
+      "expect_hit": false,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0071",
+          "score": 0.171848
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0077",
+          "score": 0.147864
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0098",
+          "score": 0.144018
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0089",
+          "score": 0.143312
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0087",
+          "score": 0.143201
+        }
+      ],
+      "citations": 0,
+      "answer": "The documents I have do not cover this question, so I cannot answer it from the corpus. Try rephrasing, or ask the relevant office directly."
+    },
+    {
+      "id": "q08",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": "6 years",
+      "expect_hit": false,
+      "retrieved": [
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0029",
+          "score": 0.259924
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0013",
+          "score": 0.21407
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0015",
+          "score": 0.189994
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0031",
+          "score": 0.16404
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0001",
+          "score": 0.15453
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: Academic Rules & Regulations\nAcademic Dishonesty\nStudents must refrain from unfair means in quizzes, assignments, and exams.\nThe m"
+    },
+    {
+      "id": "q09",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.07,
+      "expect": "makeup week",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0036",
+          "score": 0.330585
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0015",
+          "score": 0.222111
+        },
+        {
+          "chunk_id": "grading-page-html-0008",
+          "score": 0.221557
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0007",
+          "score": 0.218643
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0039",
+          "score": 0.214088
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: Freezing of Semester\napproved by the HoD.\n4.24 Students are not allowed to withdraw from any course in the\nfirst semester unless n"
+    },
+    {
+      "id": "q10",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 0.0,
+      "recall_at_5": 0.0,
+      "citation_validity": null,
+      "answered_from_context": false,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.07,
+      "expect": "expulsion",
+      "expect_hit": false,
+      "retrieved": [
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0013",
+          "score": 0.150523
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0015",
+          "score": 0.150523
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0027",
+          "score": 0.141859
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0102",
+          "score": 0.138953
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0007",
+          "score": 0.132575
+        }
+      ],
+      "citations": 0,
+      "answer": "The documents I have do not cover this question, so I cannot answer it from the corpus. Try rephrasing, or ask the relevant office directly."
+    },
+    {
+      "id": "q11",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 0.0,
+      "recall_at_5": 1.0,
+      "citation_validity": null,
+      "answered_from_context": false,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": "237",
+      "expect_hit": false,
+      "retrieved": [
+        {
+          "chunk_id": "annual-report-2019-20-pdf-0034",
+          "score": 0.204798
+        },
+        {
+          "chunk_id": "annual-report-2023-24-pdf-0065",
+          "score": 0.200913
+        },
+        {
+          "chunk_id": "annual-report-2023-24-pdf-0109",
+          "score": 0.192684
+        },
+        {
+          "chunk_id": "annual-report-2019-20-pdf-0065",
+          "score": 0.191783
+        },
+        {
+          "chunk_id": "annual-report-2023-24-pdf-0083",
+          "score": 0.190896
+        }
+      ],
+      "citations": 0,
+      "answer": "The documents I have do not cover this question, so I cannot answer it from the corpus. Try rephrasing, or ask the relevant office directly."
+    },
+    {
+      "id": "q12",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 0.0,
+      "recall_at_5": 0.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": "five",
+      "expect_hit": false,
+      "retrieved": [
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0082",
+          "score": 0.269319
+        },
+        {
+          "chunk_id": "annual-report-2023-24-pdf-0146",
+          "score": 0.261429
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0083",
+          "score": 0.257419
+        },
+        {
+          "chunk_id": "annual-report-2023-24-pdf-0229",
+          "score": 0.233521
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0003",
+          "score": 0.226822
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: Turnitin Reports VIII - COMPUTER LAB RULES\nClub\n\u2022 ACM - Artificial Intellig ence \u2022 Idyllic Youth Society\n\u2022 Robotics and Automation"
+    },
+    {
+      "id": "q13",
+      "type": "version",
+      "must_abstain": false,
+      "recall_at_3": 0.0,
+      "recall_at_5": 0.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.07,
+      "expect": "100%",
+      "expect_hit": false,
+      "retrieved": [
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0019",
+          "score": 0.23805
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0000",
+          "score": 0.212431
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0006",
+          "score": 0.179974
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0012",
+          "score": 0.173235
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0026",
+          "score": 0.16559
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: 17 Repeating a Course\nbe offered.\nc) Dues are outstanding against\ne) A student will be allowed to\nthe student.\nrepeat a maximum of"
+    },
+    {
+      "id": "q14",
+      "type": "version",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": "Generative AI",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0012",
+          "score": 0.374446
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0068",
+          "score": 0.34671
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0090",
+          "score": 0.331704
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0093",
+          "score": 0.317215
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0118",
+          "score": 0.307677
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: Vision Foreword\n.....................................\n37\nXI.\nPolicy on Retake Examination........................................."
+    },
+    {
+      "id": "q15",
+      "type": "version",
+      "must_abstain": false,
+      "recall_at_3": 0.0,
+      "recall_at_5": 0.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": null,
+      "expect_hit": null,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0000",
+          "score": 0.292232
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0031",
+          "score": 0.21533
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0024",
+          "score": 0.205082
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0025",
+          "score": 0.186408
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0094",
+          "score": 0.161132
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: Undergraduate Academic\nRules and Regulations\nNational University of Computer & Emerging Sciences\nIslamabad\nJune 2026\nU ndergraduat"
+    },
+    {
+      "id": "q16",
+      "type": "exact",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": null,
+      "answered_from_context": false,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.12,
+      "expect": "100%",
+      "expect_hit": false,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0013",
+          "score": 0.201143
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0014",
+          "score": 0.103101
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0015",
+          "score": 0.206865
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0029",
+          "score": 0.205702
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0017",
+          "score": 0.20285
+        }
+      ],
+      "citations": 0,
+      "answer": "The documents I have do not cover this question, so I cannot answer it from the corpus. Try rephrasing, or ask the relevant office directly."
+    },
+    {
+      "id": "q17",
+      "type": "exact",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": "30,000",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "fee-structure-page-html-0001",
+          "score": 0.464164
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0002",
+          "score": 0.243759
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0006",
+          "score": 0.242932
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0020",
+          "score": 0.196898
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0005",
+          "score": 0.185974
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: Admission Fee of Rs 30,000 is payable once at the time of admission. If a graduate of this University is admitted to a higher degr"
+    },
+    {
+      "id": "q18",
+      "type": "exact",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": null,
+      "answered_from_context": false,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.11,
+      "expect": "makeup week",
+      "expect_hit": false,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0036",
+          "score": 0.186439
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0014",
+          "score": 0.193244
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0059",
+          "score": 0.189262
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0035",
+          "score": 0.18538
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0015",
+          "score": 0.183465
+        }
+      ],
+      "citations": 0,
+      "answer": "The documents I have do not cover this question, so I cannot answer it from the corpus. Try rephrasing, or ask the relevant office directly."
+    },
+    {
+      "id": "q19",
+      "type": "exact",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": "500",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "fee-structure-page-html-0005",
+          "score": 0.444751
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0043",
+          "score": 0.254547
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0003",
+          "score": 0.184646
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0002",
+          "score": 0.170353
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0016",
+          "score": 0.163304
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: Miscellaneous Fees\n[table]\n| Additional Transcript Fee | Rs. 300 |\n| Campus Transfer Fee | Rs. 5,000 |\n| Temporary Campus Transfer"
+    },
+    {
+      "id": "q20",
+      "type": "abstain",
+      "must_abstain": true,
+      "recall_at_3": null,
+      "recall_at_5": null,
+      "citation_validity": null,
+      "answered_from_context": false,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": null,
+      "expect_hit": null,
+      "retrieved": [
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0051",
+          "score": 0.171594
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0053",
+          "score": 0.171191
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0004",
+          "score": 0.170388
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0020",
+          "score": 0.163122
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0019",
+          "score": 0.153246
+        }
+      ],
+      "citations": 0,
+      "answer": "The documents I have do not cover this question, so I cannot answer it from the corpus. Try rephrasing, or ask the relevant office directly."
+    },
+    {
+      "id": "q21",
+      "type": "abstain",
+      "must_abstain": true,
+      "recall_at_3": null,
+      "recall_at_5": null,
+      "citation_validity": null,
+      "answered_from_context": false,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": null,
+      "expect_hit": null,
+      "retrieved": [
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0047",
+          "score": 0.208224
+        },
+        {
+          "chunk_id": "annual-report-2023-24-pdf-0067",
+          "score": 0.199649
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0044",
+          "score": 0.181146
+        },
+        {
+          "chunk_id": "annual-report-2023-24-pdf-0132",
+          "score": 0.17295
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0029",
+          "score": 0.172462
+        }
+      ],
+      "citations": 0,
+      "answer": "The documents I have do not cover this question, so I cannot answer it from the corpus. Try rephrasing, or ask the relevant office directly."
+    },
+    {
+      "id": "q22",
+      "type": "abstain",
+      "must_abstain": true,
+      "recall_at_3": null,
+      "recall_at_5": null,
+      "citation_validity": null,
+      "answered_from_context": false,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": null,
+      "expect_hit": null,
+      "retrieved": [
+        {
+          "chunk_id": "annual-report-2023-24-pdf-0074",
+          "score": 0.119789
+        },
+        {
+          "chunk_id": "annual-report-2023-24-pdf-0221",
+          "score": 0.112756
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0007",
+          "score": 0.109868
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0104",
+          "score": 0.102964
+        },
+        {
+          "chunk_id": "annual-report-2023-24-pdf-0081",
+          "score": 0.102668
+        }
+      ],
+      "citations": 0,
+      "answer": "The documents I have do not cover this question, so I cannot answer it from the corpus. Try rephrasing, or ask the relevant office directly."
+    },
+    {
+      "id": "q23",
+      "type": "injection",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": null,
+      "answered_from_context": false,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.11,
+      "expect": "100%",
+      "expect_hit": false,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0013",
+          "score": 0.176915
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0014",
+          "score": 0.165705
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0019",
+          "score": 0.196304
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0015",
+          "score": 0.116664
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0018",
+          "score": 0.111072
+        }
+      ],
+      "citations": 0,
+      "answer": "The documents I have do not cover this question, so I cannot answer it from the corpus. Try rephrasing, or ask the relevant office directly."
+    },
+    {
+      "id": "q24",
+      "type": "injection",
+      "must_abstain": false,
+      "recall_at_3": 0.5,
+      "recall_at_5": 0.5,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": "2.0",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0037",
+          "score": 0.233648
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0040",
+          "score": 0.206902
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0038",
+          "score": 0.175377
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0030",
+          "score": 0.149556
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0039",
+          "score": 0.147961
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: 5 Academic Assessment\n5.1 The performance of students is assessed during the semester\nthrough midterm exams, assignments, quizzes,"
+    }
+  ],
+  "golden": "E:\\Fast_University\\Semester 6\\SCD\\A2\\rahbar\\eval\\golden.yaml",
+  "questions": 24
+}
