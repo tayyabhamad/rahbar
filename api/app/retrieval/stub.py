@@ -6,6 +6,9 @@ Switch to RETRIEVER=chroma in the ConfigMap once your index exists.
 
 from __future__ import annotations
 
+from typing import Any
+
+from ..embedding_local import local_hash_embed_one
 from ..schemas import Passage
 
 _PASSAGES = [
@@ -42,5 +45,21 @@ _PASSAGES = [
 class StubRetriever:
     name = "stub"
 
-    def retrieve(self, question: str, k: int) -> list[Passage]:
+    def embed_question(self, question: str) -> list[float]:
+        return local_hash_embed_one(question)
+
+    def retrieve(
+        self,
+        question: str,
+        k: int,
+        *,
+        include_superseded: bool = False,
+        vector: list[float] | None = None,
+    ) -> list[Passage]:
         return [p.model_copy() for p in _PASSAGES[:k]]
+
+    def collection_info(self) -> dict[str, Any]:
+        return {"count": len(_PASSAGES), "metadata": {"embed_model": "stub", "dimension": 0}}
+
+    def index_generation(self) -> str:
+        return "stub"

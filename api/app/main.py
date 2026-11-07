@@ -17,10 +17,13 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 
 from .config import get_settings
+from .embedding import Embedder
 from .logjson import configure_logging, request_id_var
 from .providers.llm import get_provider
 from .retrieval import get_retriever
 from .routes import ask, health, metrics
+from .services.cache import SemanticCache
+from .services.readiness import check_readiness
 
 log = logging.getLogger("rahbar.api")
 
@@ -32,13 +35,23 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.settings = settings
     app.state.retriever = get_retriever(settings)
     app.state.provider = get_provider(settings)
-    # STARTER-TODO(4.4): compare the collection's embedding-model metadata with
-    # settings.embed_model here, and make /readyz fail on a mismatch.
+    app.state.cache = SemanticCache(settings) if settings.cache_enabled else None
+    app.state.expected_dimension = Embedder(settings).dimension
+    app.state.last_generation = None
     # This process only reads the index. The indexer Job writes it.
+    # Section 4.4: compare the collection's embedding model with ours once at startup and
+    # say so in the log. The pod is never crashed for it: /readyz keeps returning 503, so
+    # it sits at 0/1 READY with the conflict in its log instead of serving garbage.
+    startup = check_readiness(settings, app.state.retriever, app.state.cache,
+                              app.state.expected_dimension)
     log.info(
         "api started",
         extra={"retriever": settings.retriever, "llm_provider": settings.llm_provider,
-               "embed_model": settings.embed_model, "top_k": settings.top_k},
+               "embed_model": settings.embed_model, "top_k": settings.top_k,
+               "relevance_floor": settings.relevance_floor,
+               "cache": "redis" if app.state.cache else "disabled",
+               "ready": startup.ready, "not_ready_because": startup.failed,
+               "checks": startup.checks},
     )
     yield
 

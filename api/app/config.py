@@ -1,8 +1,8 @@
 """Runtime configuration, read once from environment variables.
 
-On the cluster these variables come from your ConfigMap and Secret (section 4.1).
-Nothing here is baked into the image, so one image runs in every environment.
-Add your own keys (relevance floor, cache settings, ...) the same way.
+On the cluster these variables come from the ConfigMap `rahbar-config` and the
+Secret `rahbar-secret` (docs/ARCHITECTURE.md lists every key). Nothing here is
+baked into the image, so one image runs in every environment.
 """
 
 from __future__ import annotations
@@ -27,21 +27,38 @@ class Settings:
 
     # The embedding pin (section 4.4). The indexer reads the same ConfigMap key.
     embed_model: str = "nomic-embed-text"
+    embed_timeout_seconds: float = 60.0
 
     # Vector store
     chroma_host: str = "chroma"
     chroma_port: int = 8000
     collection: str = "rahbar"
 
+    # Semantic cache (section 3.3). An empty REDIS_HOST disables the cache (unit tests,
+    # `make dev`); on the cluster it is always set.
+    redis_host: str = "redis"
+    redis_port: int = 6379
+    cache_threshold: float = 0.92    # cosine similarity for a hit; chosen with data (PIPELINE.md)
+    cache_ttl_seconds: int = 86400
+
     # Retrieval and generation
     top_k: int = 5
-    temperature: float = 0.2
+    relevance_floor: float = 0.45    # best similarity below this: abstain (section 3.4)
+    # Exclude superseded documents unless the user asks for an older version. Only ever
+    # set to false to reproduce failure mode E (docs/FAILURE-ANALYSIS.md).
+    superseded_filter: bool = True
+    temperature: float = 0.1
     llm_model: str = "llama3.2:3b"
+    llm_timeout_seconds: float = 120.0
     ollama_url: str = "http://host.minikube.internal:11434"
-    hosted_base_url: str = ""        # e.g. an OpenAI-compatible endpoint
+    hosted_base_url: str = ""        # an OpenAI-compatible endpoint, e.g. Groq
     llm_api_key: str = field(default="", repr=False)   # from the Secret; never log it
 
     log_level: str = "INFO"
+
+    @property
+    def cache_enabled(self) -> bool:
+        return bool(self.redis_host)
 
 
 def get_settings() -> Settings:
@@ -49,12 +66,21 @@ def get_settings() -> Settings:
         retriever=os.environ.get("RETRIEVER", "stub"),
         llm_provider=os.environ.get("LLM_PROVIDER", "stub"),
         embed_model=os.environ.get("EMBED_MODEL", "nomic-embed-text"),
+        embed_timeout_seconds=_float("EMBED_TIMEOUT_SECONDS", 60.0),
         chroma_host=os.environ.get("CHROMA_HOST", "chroma"),
         chroma_port=_int("CHROMA_PORT", 8000),
         collection=os.environ.get("CHROMA_COLLECTION", "rahbar"),
+        redis_host=os.environ.get("REDIS_HOST", "redis"),
+        redis_port=_int("REDIS_PORT", 6379),
+        cache_threshold=_float("CACHE_THRESHOLD", 0.92),
+        cache_ttl_seconds=_int("CACHE_TTL_SECONDS", 86400),
         top_k=_int("TOP_K", 5),
-        temperature=_float("TEMPERATURE", 0.2),
+        relevance_floor=_float("RELEVANCE_FLOOR", 0.45),
+        superseded_filter=os.environ.get("SUPERSEDED_FILTER", "true").lower()
+        in ("1", "true", "yes"),
+        temperature=_float("TEMPERATURE", 0.1),
         llm_model=os.environ.get("LLM_MODEL", "llama3.2:3b"),
+        llm_timeout_seconds=_float("LLM_TIMEOUT_SECONDS", 120.0),
         ollama_url=os.environ.get("OLLAMA_URL", "http://host.minikube.internal:11434"),
         hosted_base_url=os.environ.get("HOSTED_BASE_URL", ""),
         llm_api_key=os.environ.get("LLM_API_KEY", ""),
