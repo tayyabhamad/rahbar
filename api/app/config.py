@@ -25,8 +25,9 @@ class Settings:
     retriever: str = "stub"          # RETRIEVER: stub | chroma
     llm_provider: str = "stub"       # LLM_PROVIDER: stub | ollama-host | ollama-incluster | hosted
 
-    # The embedding pin (section 4.4). The indexer reads the same ConfigMap key.
+    # The embedding pin (section 4.4). The indexer reads the same ConfigMap keys.
     embed_model: str = "nomic-embed-text"
+    embed_provider: str = "ollama"   # EMBED_PROVIDER: ollama | hosted (local-hash-v1 is by name)
     embed_timeout_seconds: float = 60.0
 
     # Vector store
@@ -66,6 +67,7 @@ def get_settings() -> Settings:
         retriever=os.environ.get("RETRIEVER", "stub"),
         llm_provider=os.environ.get("LLM_PROVIDER", "stub"),
         embed_model=os.environ.get("EMBED_MODEL", "nomic-embed-text"),
+        embed_provider=os.environ.get("EMBED_PROVIDER", "ollama"),
         embed_timeout_seconds=_float("EMBED_TIMEOUT_SECONDS", 60.0),
         chroma_host=os.environ.get("CHROMA_HOST", "chroma"),
         chroma_port=_int("CHROMA_PORT", 8000),

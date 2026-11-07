@@ -60,6 +60,7 @@ dev, prod and ci overlays patch the ones that differ.
 | `RETRIEVER` | `chroma` | api | `stub` only for week-1 and unit tests |
 | `LLM_PROVIDER` | `ollama-host` | api | `stub`, `ollama-host`, `ollama-incluster` or `hosted` |
 | `EMBED_MODEL` | `nomic-embed-text` | api, indexer | **the pin**; `local-hash-v1` in CI (see below) |
+| `EMBED_PROVIDER` | `ollama` | api, indexer | `ollama` (OLLAMA_URL) or `hosted` (OpenAI-compatible `/embeddings` at HOSTED_BASE_URL with the Secret's key, e.g. Google AI Studio `gemini-embedding-001`) |
 | `LLM_MODEL` | `llama3.2:3b` | api | |
 | `OLLAMA_URL` | `http://host.minikube.internal:11434` | api, indexer | embeddings and generation |
 | `HOSTED_BASE_URL` | `` | api | OpenAI-compatible base URL for `hosted` |

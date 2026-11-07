@@ -12,6 +12,8 @@ data:
   RETRIEVER: "chroma"
   LLM_PROVIDER: "ollama-host"
   EMBED_MODEL: "nomic-embed-text"
+  # Where EMBED_MODEL runs: ollama (OLLAMA_URL) or hosted (HOSTED_BASE_URL + the Secret).
+  EMBED_PROVIDER: "ollama"
   LLM_MODEL: "llama3.2:3b"
   OLLAMA_URL: "http://host.minikube.internal:11434"
   HOSTED_BASE_URL: ""

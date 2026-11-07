@@ -45,9 +45,15 @@ provider. Design: `docs/ARCHITECTURE.md`; decisions: `docs/adr/`.
   and enables the `metrics-server` and `ingress` addons)
 * kubectl; kustomize is optional (`kubectl apply -k` is enough; `make validate` and CI use
   the standalone `kustomize` plus `kubeconform`)
-* Ollama on the laptop, listening on all interfaces so pods can reach it:
-  `OLLAMA_HOST=0.0.0.0 ollama serve`, then `ollama pull llama3.2:3b` and
-  `ollama pull nomic-embed-text`
+* One of the two LLM paths (both are supported and switch with one overlay):
+  * **local**: Ollama on the laptop, listening on all interfaces so pods can reach it:
+    `OLLAMA_HOST=0.0.0.0 ollama serve`, then `ollama pull llama3.2:3b` and
+    `ollama pull nomic-embed-text` (overlay `k8s/overlays/dev`, the default)
+  * **hosted**: a free Google AI Studio key (no card; https://aistudio.google.com/apikey),
+    which serves both chat (`gemini-2.5-flash-lite`) and embeddings
+    (`gemini-embedding-001`) through its OpenAI-compatible endpoint
+    (overlay `k8s/overlays/dev-hosted`). Groq and OpenRouter work for chat only; keep
+    embeddings on Ollama with them.
 * Python 3.12, `make`, `git`
 * On Windows: WSL 2 (Ubuntu). The Makefile needs bash; run everything from the WSL shell
   with the repository on the Linux filesystem or mounted under `/mnt`.
@@ -66,8 +72,10 @@ make images           # build rahbar-api:dev, rahbar-indexer:dev, rahbar-ui:dev 
 # One command creates everything, the namespace included; no separate namespace apply.
 make apply            # = kubectl apply -k k8s/overlays/dev
 
-# Optional, only for LLM_PROVIDER=hosted (the key never touches a file):
+# Hosted path instead (no Ollama): create the Secret from the shell, never from a file,
+# then apply the dev-hosted overlay in place of `make apply`.
 export LLM_API_KEY=...; make secret
+kubectl apply -k k8s/overlays/dev-hosted
 
 # Wait for the stores, then the index, then the api (which sits at 0/1 until the index exists).
 kubectl rollout status statefulset/chroma -n rahbar --timeout=180s

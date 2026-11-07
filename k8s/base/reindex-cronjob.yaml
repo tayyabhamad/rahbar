@@ -74,6 +74,10 @@ spec:
               envFrom:
                 - configMapRef:
                     name: rahbar-config
+                # The key is read only when EMBED_PROVIDER=hosted (embeddings from the same endpoint).
+                - secretRef:
+                    name: rahbar-secret
+                    optional: true
               env:
                 - name: CORPUS_DIR
                   value: /corpus/raw

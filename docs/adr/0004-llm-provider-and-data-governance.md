@@ -122,6 +122,18 @@ refuses readiness on a mismatch (`api/app/services/readiness.py:36-48`, `:76-86`
   would need a retention policy and a notice to users; out of scope, so we store
   nothing beyond the cache TTL.
 
+## Addendum: embeddings on the hosted path (8 Nov 2026)
+
+`EMBED_PROVIDER` (ConfigMap) selects where `EMBED_MODEL` runs: `ollama` (default) or
+`hosted`, an OpenAI-compatible `POST /embeddings` at `HOSTED_BASE_URL` with the Secret's
+key. Google AI Studio is the one free tier that serves embeddings as well as chat, so the
+`dev-hosted` overlay pins `gemini-embedding-001` (3072 dimensions) next to
+`gemini-2.5-flash-lite`; the indexer Job therefore also mounts `rahbar-secret`
+(`optional: true`, read only on this path). Both sides share the same three rules
+(`api/app/embedding.py`, `indexer/pipeline/embed.py`), and the pin check is unchanged:
+model name and dimension in the collection metadata versus the API's ConfigMap. Free
+tiers rate-limit, so 429 and 5xx answers are retried with backoff, honouring Retry-After.
+
 ## Consequences
 * Switching provider is `kubectl patch configmap rahbar-config` plus a rollout; no image
   changes. Switching to `hosted` also needs `HOSTED_BASE_URL`, `LLM_MODEL` and the
