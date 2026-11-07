@@ -1,0 +1,446 @@
+# RAHBAR continuous integration (case study section 6).
+#
+# Job graph (every job is a gate; a red job blocks the merge into main):
+#
+#   lint ─────────────────────────────┐
+#   test ──────────────┐              │   (independent gates; all must be green)
+#   manifests          │              │
+#   build ──┬── scan   │              │
+#           └───────── e2e-eval ◄─────┘   (needs build + test)
+#
+# Nothing in this workflow pushes an image or touches a real registry or cluster. That is
+# cd.yml, which only runs on main. Here the images are built once, saved as a tar artifact
+# and reused by `scan` and `e2e-eval`, so the bytes that are scanned are the bytes that run.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [dev]
+
+# Least privilege: the workflow only reads the repository. No job uploads SARIF (we fail
+# the build on findings instead of reporting them), so `security-events: write` is not
+# needed; no job writes to the repository, packages or deployments.
+permissions:
+  contents: read
+
+# One run per ref: a newer push to the same branch or PR cancels the run it replaced,
+# so the queue does not fill with results nobody will read.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+  # Local-only tags for the three images; the ci overlay references exactly these names
+  # with imagePullPolicy: IfNotPresent, so kind never tries to pull them.
+  IMAGE_API: rahbar-api:ci
+  IMAGE_INDEXER: rahbar-indexer:ci
+  IMAGE_UI: rahbar-ui:ci
+  IMAGES_ARTIFACT: rahbar-images
+  KIND_CLUSTER: rahbar-ci
+
+jobs:
+  # ---------------------------------------------------------------------------------
+  # Gate 1: static analysis. ruff catches unused imports, bugs and style drift; mypy
+  # catches the type errors a 3B-model-driven JSON parser would otherwise surface at
+  # runtime. The UI is a single static index.html served by nginx with no build step,
+  # so there is no eslint/tsc job: nothing to compile, nothing to lint.
+  # ---------------------------------------------------------------------------------
+  lint:
+    name: Lint (ruff + mypy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            api/requirements*.txt
+            indexer/requirements*.txt
+
+      - name: Install pinned dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r api/requirements-dev.txt -r indexer/requirements-dev.txt
+
+      - name: ruff
+        run: ruff check api indexer eval corpus
+
+      - name: mypy (api)
+        working-directory: api
+        run: mypy app
+
+      - name: mypy (indexer)
+        working-directory: indexer
+        run: mypy pipeline
+
+  # ---------------------------------------------------------------------------------
+  # Gate 2: unit tests with the stub retriever and stub provider: no cluster, no model,
+  # no network, so a red test is always a code regression and never flakiness. The api
+  # has a coverage floor (60 %) because the answer pipeline is where the grounding
+  # rules live; the indexer reports coverage without a floor (its stages are exercised
+  # end to end by e2e-eval).
+  # ---------------------------------------------------------------------------------
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      RETRIEVER: stub
+      LLM_PROVIDER: stub
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            api/requirements*.txt
+            indexer/requirements*.txt
+
+      - name: Install pinned dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r api/requirements-dev.txt -r indexer/requirements-dev.txt
+          pip install pytest-cov==6.1.1
+
+      - name: pytest (api, coverage floor 60 %)
+        working-directory: api
+        run: pytest -q --cov=app --cov-report=term-missing --cov-fail-under=60
+
+      - name: pytest (indexer)
+        working-directory: indexer
+        run: pytest -q --cov=pipeline --cov-report=term-missing
+
+  # ---------------------------------------------------------------------------------
+  # Gate 3: the manifests must render and must be valid against the Kubernetes schemas
+  # for every overlay. A typo in a probe path or an unknown field would otherwise only
+  # show up when kubectl apply runs against a cluster. -strict rejects unknown fields;
+  # -ignore-missing-schemas lets CRD-free overlays pass without a schema for every kind.
+  # ---------------------------------------------------------------------------------
+  manifests:
+    name: Manifests (kustomize + kubeconform)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      KUBECONFORM_VERSION: v0.6.7
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: imranismail/setup-kustomize@v2
+        with:
+          kustomize-version: "5.6.0"
+
+      - name: Install kubeconform
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/kubeconform.tgz \
+            "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz"
+          mkdir -p "$HOME/.local/bin"
+          tar -xzf /tmp/kubeconform.tgz -C "$HOME/.local/bin" kubeconform
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Validate every overlay
+        run: |
+          set -euo pipefail
+          for overlay in prod ci dev; do
+            echo "::group::k8s/overlays/${overlay}"
+            kustomize build "k8s/overlays/${overlay}" \
+              | kubeconform -strict -ignore-missing-schemas -summary
+            echo "::endgroup::"
+          done
+
+  # ---------------------------------------------------------------------------------
+  # Gate 4: the three images must build. They are built exactly once, loaded into the
+  # runner's Docker, saved to one compressed tar and uploaded as an artifact so that
+  # `scan` and `e2e-eval` consume the same bytes instead of rebuilding. Layer cache is
+  # kept in the GitHub Actions cache, one scope per image so a change to the indexer
+  # does not evict the api's layers.
+  # ---------------------------------------------------------------------------------
+  build:
+    name: Build images
+    runs-on: ubuntu-latest
+    # Images are built only from code that passed lint and tests, even though a PR build
+    # never pushes: scan and e2e-eval consume exactly these bytes.
+    needs: [lint, test]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build rahbar-api
+        uses: docker/build-push-action@v6
+        with:
+          context: api
+          file: api/Dockerfile
+          push: false
+          load: true
+          tags: ${{ env.IMAGE_API }}
+          cache-from: type=gha,scope=rahbar-api
+          cache-to: type=gha,mode=max,scope=rahbar-api
+
+      # The indexer image carries corpus/fetch.py and corpus/sources.yaml, so its build
+      # context is the repository root (see docs/ARCHITECTURE.md, "Images").
+      - name: Build rahbar-indexer
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: indexer/Dockerfile
+          push: false
+          load: true
+          tags: ${{ env.IMAGE_INDEXER }}
+          cache-from: type=gha,scope=rahbar-indexer
+          cache-to: type=gha,mode=max,scope=rahbar-indexer
+
+      - name: Build rahbar-ui
+        uses: docker/build-push-action@v6
+        with:
+          context: ui
+          file: ui/Dockerfile
+          push: false
+          load: true
+          tags: ${{ env.IMAGE_UI }}
+          cache-from: type=gha,scope=rahbar-ui
+          cache-to: type=gha,mode=max,scope=rahbar-ui
+
+      - name: Save the images as one tar
+        run: |
+          set -euo pipefail
+          docker image ls --format '{{.Repository}}:{{.Tag}}  {{.Size}}' | grep '^rahbar-'
+          docker save "$IMAGE_API" "$IMAGE_INDEXER" "$IMAGE_UI" | gzip -1 > /tmp/rahbar-images.tgz
+          ls -lh /tmp/rahbar-images.tgz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.IMAGES_ARTIFACT }}
+          path: /tmp/rahbar-images.tgz
+          if-no-files-found: error
+          retention-days: 1
+
+  # ---------------------------------------------------------------------------------
+  # Gate 5: vulnerability scan of the exact images that were built. HIGH and CRITICAL
+  # findings with an available fix fail the job (exit-code 1); unfixed ones are reported
+  # but do not block, because there is nothing a rebuild could do about them. One matrix
+  # leg per image so the log says which image failed, and fail-fast is off so all three
+  # verdicts are visible in one run.
+  # ---------------------------------------------------------------------------------
+  scan:
+    name: Scan ${{ matrix.image }}
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [rahbar-api, rahbar-indexer, rahbar-ui]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.IMAGES_ARTIFACT }}
+          path: /tmp
+
+      - name: Load the images
+        run: docker load -i /tmp/rahbar-images.tgz
+
+      - name: Trivy (HIGH, CRITICAL, fixed only)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: image
+          image-ref: ${{ matrix.image }}:ci
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+        env:
+          # ghcr.io rate-limits anonymous DB pulls; try the ECR mirror first, then ghcr.
+          TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db:2,ghcr.io/aquasecurity/trivy-db:2
+          TRIVY_JAVA_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-java-db:1,ghcr.io/aquasecurity/trivy-java-db:1
+
+  # ---------------------------------------------------------------------------------
+  # Gate 6: the system gate. A real kind cluster, the real manifests (ci overlay), the
+  # real images, the real indexer Job over the fixture corpus, the real Ingress, and
+  # eval/run_eval.py scoring recall@k, citation validity and abstention against the
+  # fixture golden set. EMBED_MODEL=local-hash-v1 and LLM_PROVIDER=stub mean no model
+  # and no network, yet retrieval, the relevance floor and the must-abstain rule are
+  # all exercised for real. The eval script's exit code is the gate: 0 pass, 1 a gate
+  # failed, 2 the evaluation is not implemented yet (also red: a missing gate is not a
+  # passing gate).
+  # ---------------------------------------------------------------------------------
+  e2e-eval:
+    name: End-to-end eval on kind
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      NS: rahbar
+      INGRESS_HOST: rahbar.local
+      INGRESS_URL: http://127.0.0.1
+      INGRESS_NGINX_MANIFEST: https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.12.1/deploy/static/provider/kind/deploy.yaml
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # The kind node publishes 80/443 on the runner and carries the ingress-ready label
+      # that the ingress-nginx "kind" provider manifest selects on, so the controller
+      # binds hostPort 80 and the Ingress is reachable at http://127.0.0.1 with a Host header.
+      - name: Write kind config
+        run: |
+          cat > kind-config.yaml <<'EOF'
+          kind: Cluster
+          apiVersion: kind.x-k8s.io/v1alpha4
+          nodes:
+            - role: control-plane
+              kubeadmConfigPatches:
+                - |
+                  kind: InitConfiguration
+                  nodeRegistration:
+                    kubeletExtraArgs:
+                      node-labels: "ingress-ready=true"
+              extraPortMappings:
+                - containerPort: 80
+                  hostPort: 80
+                  protocol: TCP
+                - containerPort: 443
+                  hostPort: 443
+                  protocol: TCP
+          EOF
+
+      - uses: helm/kind-action@v1
+        with:
+          cluster_name: ${{ env.KIND_CLUSTER }}
+          config: kind-config.yaml
+          node_image: kindest/node:v1.32.0
+          wait: 120s
+
+      - name: Install ingress-nginx for kind
+        run: |
+          set -euo pipefail
+          kubectl apply -f "$INGRESS_NGINX_MANIFEST"
+          kubectl wait --namespace ingress-nginx \
+            --for=condition=ready pod \
+            --selector=app.kubernetes.io/component=controller \
+            --timeout=180s
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.IMAGES_ARTIFACT }}
+          path: /tmp
+
+      - name: Load the images into Docker and into kind
+        run: |
+          set -euo pipefail
+          docker load -i /tmp/rahbar-images.tgz
+          kind load docker-image "$IMAGE_API" "$IMAGE_INDEXER" "$IMAGE_UI" --name "$KIND_CLUSTER"
+
+      # Namespace first, then the fixtures ConfigMap the ci overlay mounts at /corpus/raw
+      # (the indexer's discover() skips README.md and non-document extensions), then the
+      # overlay. The api pods stay 0/1 until the indexer has written the collection.
+      - name: Deploy the ci overlay
+        run: |
+          set -euo pipefail
+          kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create configmap rahbar-fixtures -n "$NS" --from-file=eval/fixtures/ \
+            --dry-run=client -o yaml | kubectl apply -f -
+          kubectl apply -k k8s/overlays/ci
+          kubectl get all -n "$NS"
+
+      - name: Wait for Chroma and Redis
+        run: |
+          set -euo pipefail
+          kubectl rollout status statefulset/chroma -n "$NS" --timeout=180s
+          kubectl rollout status deployment/redis -n "$NS" --timeout=120s
+
+      # Poll for Complete or Failed instead of a plain `kubectl wait --for=condition=complete`
+      # so a Job that has exhausted its backoffLimit fails fast with its logs, rather than
+      # sitting silently until the timeout.
+      - name: Wait for the indexer Job
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 60); do
+            complete=$(kubectl get job/indexer -n "$NS" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')
+            failed=$(kubectl get job/indexer -n "$NS" -o jsonpath='{.status.conditions[?(@.type=="Failed")].status}')
+            if [ "$complete" = "True" ]; then
+              echo "indexer Job complete"
+              kubectl logs job/indexer -n "$NS" --all-containers --tail=50 || true
+              exit 0
+            fi
+            if [ "$failed" = "True" ]; then
+              echo "::error::indexer Job failed"
+              break
+            fi
+            sleep 5
+          done
+          echo "::group::indexer logs"
+          kubectl logs job/indexer -n "$NS" --all-containers --tail=200 || true
+          echo "::endgroup::"
+          kubectl get pods -n "$NS"
+          kubectl describe pod -n "$NS" -l app.kubernetes.io/name=indexer || true
+          exit 1
+
+      - name: Wait for the api and ui rollouts
+        run: |
+          set -euo pipefail
+          kubectl rollout status deployment/api -n "$NS" --timeout=300s
+          kubectl rollout status deployment/ui -n "$NS" --timeout=120s
+
+      # /healthz is not routed by the Ingress (only / and /api are), so the smoke test
+      # uses the two public paths: the UI page and one real question.
+      - name: Smoke test through the Ingress
+        run: |
+          set -euo pipefail
+          curl -fsS -H "Host: ${INGRESS_HOST}" "${INGRESS_URL}/" -o /dev/null -w 'ui: HTTP %{http_code}\n'
+          curl -fsS -H "Host: ${INGRESS_HOST}" -H 'Content-Type: application/json' \
+            -X POST "${INGRESS_URL}/api/ask" \
+            -d '{"question":"When is a student placed on academic warning?"}' \
+            | python -m json.tool
+
+      - name: Evaluate against the fixture golden set
+        run: |
+          set -euo pipefail
+          pip install httpx==0.28.1 pyyaml==6.0.2
+          python eval/run_eval.py \
+            --api "$INGRESS_URL" --host "$INGRESS_HOST" \
+            --golden eval/fixtures/golden.fixture.yaml \
+            --baseline eval/fixtures/baseline.fixture.json \
+            --out eval/fixtures/results.ci.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-results
+          path: eval/fixtures/results.ci.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Diagnostics
+        if: failure()
+        run: |
+          echo "::group::objects"
+          kubectl get all,ingress,networkpolicy,pvc -n "$NS" -o wide || true
+          echo "::endgroup::"
+          echo "::group::events"
+          kubectl get events -n "$NS" --sort-by=.lastTimestamp || true
+          echo "::endgroup::"
+          echo "::group::describe pods"
+          kubectl describe pods -n "$NS" || true
+          echo "::endgroup::"
+          for app in api indexer chroma redis ui; do
+            echo "::group::logs ${app}"
+            kubectl logs -n "$NS" -l "app.kubernetes.io/name=${app}" --all-containers --prefix --tail=200 || true
+            echo "::endgroup::"
+          done
+          echo "::group::ingress-nginx"
+          kubectl get pods -n ingress-nginx -o wide || true
+          kubectl logs -n ingress-nginx -l app.kubernetes.io/component=controller --tail=100 || true
+          echo "::endgroup::"

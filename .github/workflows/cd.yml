@@ -1,0 +1,500 @@
+# RAHBAR continuous delivery (case study section 6).
+#
+# Job graph, a strict chain; each link only runs when the previous one is green:
+#
+#   test ──> build-push ──> deploy
+#
+# Runs only on push to main (main is protected, so a push is a merged, CI-green PR).
+# Images are tagged with the commit SHA and never `latest`, so what is running can
+# always be traced to one commit, and a rollback is "deploy the previous SHA".
+#
+# Secrets this workflow needs (Settings > Secrets and variables > Actions):
+#   DOCKERHUB_USERNAME  the Docker Hub account that owns rahbar-{api,indexer,ui}
+#   DOCKERHUB_TOKEN     a Docker Hub *access token* with Read & Write scope. Never the
+#                       account password: a token can be scoped, rotated and revoked
+#                       without touching the account, and shows up in Docker Hub's audit log.
+#   LLM_API_KEY         optional; the deploy writes it into the rahbar-secret Secret.
+#                       Absent, the Secret holds the placeholder "unset" (the deploy runs
+#                       the stub provider anyway; see "deploy").
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+# Least privilege: read the repository, nothing else. Pushing to Docker Hub uses the
+# Docker Hub token, not the GitHub token.
+permissions:
+  contents: read
+
+# Deploys queue, they never cancel each other: a half-applied release is worse than a
+# slow one. The next push to main waits for this run to finish.
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.12"
+  REGISTRY: docker.io
+  KIND_CLUSTER: rahbar-cd
+  NS: rahbar
+
+jobs:
+  # ---------------------------------------------------------------------------------
+  # Link 1: the same unit-test gate as ci.yml. CI already ran it on the PR, but main is
+  # the branch that ships; re-running the tests on the merge commit itself guards against
+  # a merge that was green on both sides and wrong once combined.
+  # ---------------------------------------------------------------------------------
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      RETRIEVER: stub
+      LLM_PROVIDER: stub
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: |
+            api/requirements*.txt
+            indexer/requirements*.txt
+
+      - name: Install pinned dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r api/requirements-dev.txt -r indexer/requirements-dev.txt
+          pip install pytest-cov==6.1.1
+
+      - name: pytest (api, coverage floor 60 %)
+        working-directory: api
+        run: pytest -q --cov=app --cov-report=term-missing --cov-fail-under=60
+
+      - name: pytest (indexer)
+        working-directory: indexer
+        run: pytest -q --cov=pipeline --cov-report=term-missing
+
+  # ---------------------------------------------------------------------------------
+  # Link 2: build the three images and push them to Docker Hub tagged with the commit
+  # SHA. Only after the tests passed on this exact commit, so nothing untested is ever
+  # published under this account.
+  # ---------------------------------------------------------------------------------
+  build-push:
+    name: Build and push images
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      IMAGE_PREFIX: docker.io/${{ secrets.DOCKERHUB_USERNAME }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Fail with a readable message instead of an opaque login error when the repository
+      # secrets have not been configured yet.
+      - name: Check the Docker Hub secrets are configured
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -z "$DOCKERHUB_USERNAME" ] || [ -z "$DOCKERHUB_TOKEN" ]; then
+            echo "::error::DOCKERHUB_USERNAME and DOCKERHUB_TOKEN must be set as repository secrets (token = a Docker Hub access token, not the password)"
+            exit 1
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          # An access token (Account settings > Personal access tokens), never the password.
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push rahbar-api
+        uses: docker/build-push-action@v6
+        with:
+          context: api
+          file: api/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}/rahbar-api:${{ github.sha }}
+          provenance: false
+          cache-from: type=gha,scope=rahbar-api
+          cache-to: type=gha,mode=max,scope=rahbar-api
+
+      # Repository root as context: the indexer image carries corpus/fetch.py and
+      # corpus/sources.yaml (docs/ARCHITECTURE.md, "Images").
+      - name: Build and push rahbar-indexer
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: indexer/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}/rahbar-indexer:${{ github.sha }}
+          provenance: false
+          cache-from: type=gha,scope=rahbar-indexer
+          cache-to: type=gha,mode=max,scope=rahbar-indexer
+
+      - name: Build and push rahbar-ui
+        uses: docker/build-push-action@v6
+        with:
+          context: ui
+          file: ui/Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}/rahbar-ui:${{ github.sha }}
+          provenance: false
+          cache-from: type=gha,scope=rahbar-ui
+          cache-to: type=gha,mode=max,scope=rahbar-ui
+
+  # ---------------------------------------------------------------------------------
+  # Link 3: deploy the prod overlay, pointed at the images just pushed, to a kind
+  # cluster with ingress-nginx, and prove the release answers a question through the
+  # Ingress. The cluster is created on the runner, so it has no Ollama and no GPU: the
+  # prod overlay is applied with the CI runtime values (local-hash embeddings, stub LLM)
+  # layered on top; see "Write the cd overlay" for how and why.
+  # ---------------------------------------------------------------------------------
+  deploy:
+    name: Deploy to kind and smoke test
+    needs: build-push
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      IMAGE_PREFIX: docker.io/${{ secrets.DOCKERHUB_USERNAME }}
+      INGRESS_HOST: rahbar.local
+      INGRESS_URL: http://127.0.0.1
+      INGRESS_NGINX_MANIFEST: https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.12.1/deploy/static/provider/kind/deploy.yaml
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: imranismail/setup-kustomize@v2
+        with:
+          kustomize-version: "5.6.0"
+
+      # Same kind layout as ci.yml: 80/443 published on the runner, node labelled
+      # ingress-ready=true for the ingress-nginx kind provider manifest.
+      - name: Write kind config
+        run: |
+          cat > kind-config.yaml <<'EOF'
+          kind: Cluster
+          apiVersion: kind.x-k8s.io/v1alpha4
+          nodes:
+            - role: control-plane
+              kubeadmConfigPatches:
+                - |
+                  kind: InitConfiguration
+                  nodeRegistration:
+                    kubeletExtraArgs:
+                      node-labels: "ingress-ready=true"
+              extraPortMappings:
+                - containerPort: 80
+                  hostPort: 80
+                  protocol: TCP
+                - containerPort: 443
+                  hostPort: 443
+                  protocol: TCP
+          EOF
+
+      - uses: helm/kind-action@v1
+        with:
+          cluster_name: ${{ env.KIND_CLUSTER }}
+          config: kind-config.yaml
+          node_image: kindest/node:v1.32.0
+          wait: 120s
+
+      - name: Install ingress-nginx for kind
+        run: |
+          set -euo pipefail
+          kubectl apply -f "$INGRESS_NGINX_MANIFEST"
+          kubectl wait --namespace ingress-nginx \
+            --for=condition=ready pod \
+            --selector=app.kubernetes.io/component=controller \
+            --timeout=180s
+
+      # The prod overlay ships with the placeholder names docker.io/DOCKERHUB_USERNAME/
+      # rahbar-{api,indexer,ui}. `kustomize edit set image` rewrites them to the real
+      # account and the SHA that build-push just published. Both the base name and the
+      # placeholder name are set so the rewrite works whether the overlay maps images
+      # through `images:` (keyed on the base name) or through a patch (keyed on the
+      # placeholder); whichever entry matches nothing is a no-op. The rendered output
+      # is then checked: the SHA must be present and no placeholder may survive.
+      - name: Point the prod overlay at the pushed images
+        working-directory: k8s/overlays/prod
+        run: |
+          set -euo pipefail
+          for component in api indexer ui; do
+            kustomize edit set image \
+              "rahbar-${component}=${IMAGE_PREFIX}/rahbar-${component}:${GITHUB_SHA}"
+            kustomize edit set image \
+              "docker.io/DOCKERHUB_USERNAME/rahbar-${component}=${IMAGE_PREFIX}/rahbar-${component}:${GITHUB_SHA}"
+          done
+          echo "::group::prod kustomization.yaml after set image"
+          cat kustomization.yaml
+          echo "::endgroup::"
+          rendered=$(kustomize build .)
+          for component in api indexer ui; do
+            grep -q "image: ${IMAGE_PREFIX}/rahbar-${component}:${GITHUB_SHA}" <<<"$rendered" \
+              || { echo "::error::rahbar-${component} was not rewritten to the SHA-tagged image"; exit 1; }
+          done
+          if grep -q "DOCKERHUB_USERNAME" <<<"$rendered"; then
+            echo "::error::a DOCKERHUB_USERNAME placeholder survived in the rendered prod overlay"
+            exit 1
+          fi
+
+      # Why a temporary overlay instead of `kubectl patch` after the apply: a patch
+      # after apply would start the api and the indexer once with the Ollama values,
+      # fail, and then roll; a kustomize layer renders the right values on the first
+      # apply and leaves the committed prod overlay untouched (this directory exists
+      # only on the runner and is never committed). The overlay inherits everything
+      # from prod (SHA-tagged images included) and layers on exactly what the ci
+      # overlay does per docs/ARCHITECTURE.md: local-hash embeddings and the stub LLM
+      # (the runner has no Ollama), the fixture corpus mounted at /corpus/raw in place
+      # of the fetch initContainer (no downloads from the university site from CI), a
+      # relevance floor tuned for the hashed embedding, api requests sized for a 4-vCPU
+      # runner, and the Docker Hub pull secret so private repositories work too.
+      # JSON 6902 paths follow the pod template described in ARCHITECTURE.md (one main
+      # container, an initContainer `fetch`, an emptyDir at /corpus).
+      - name: Write the cd overlay
+        run: |
+          set -euo pipefail
+          mkdir -p k8s/overlays/cd
+          cat > k8s/overlays/cd/kustomization.yaml <<'EOF'
+          apiVersion: kustomize.config.k8s.io/v1beta1
+          kind: Kustomization
+          namespace: rahbar
+          resources:
+            - ../prod
+          patches:
+            # Runtime values for a cluster with no model: the hashed embedding and the stub
+            # provider, same as the ci overlay. RELEVANCE_FLOOR is lowered because lexical
+            # cosine scores run lower than nomic-embed-text's.
+            - patch: |-
+                apiVersion: v1
+                kind: ConfigMap
+                metadata:
+                  name: rahbar-config
+                data:
+                  RETRIEVER: chroma
+                  EMBED_MODEL: local-hash-v1
+                  LLM_PROVIDER: stub
+                  RELEVANCE_FLOOR: "0.15"
+            # Indexer Job: drop the fetch initContainer and mount the fixtures ConfigMap at
+            # /corpus/raw (CORPUS_DIR). The emptyDir at /corpus stays; the ConfigMap mounts
+            # inside it.
+            - target:
+                group: batch
+                version: v1
+                kind: Job
+                name: indexer
+              patch: |-
+                - op: remove
+                  path: /spec/template/spec/initContainers
+                - op: add
+                  path: /spec/template/spec/volumes/-
+                  value:
+                    name: fixtures
+                    configMap:
+                      name: rahbar-fixtures
+                - op: add
+                  path: /spec/template/spec/containers/0/volumeMounts/-
+                  value:
+                    name: fixtures
+                    mountPath: /corpus/raw
+                    readOnly: true
+                - op: add
+                  path: /spec/template/spec/imagePullSecrets
+                  value:
+                    - name: rahbar-regcred
+            # The weekly CronJob gets the identical treatment so a scheduled run on this
+            # cluster would behave like the Job.
+            - target:
+                group: batch
+                version: v1
+                kind: CronJob
+                name: reindex
+              patch: |-
+                - op: remove
+                  path: /spec/jobTemplate/spec/template/spec/initContainers
+                - op: add
+                  path: /spec/jobTemplate/spec/template/spec/volumes/-
+                  value:
+                    name: fixtures
+                    configMap:
+                      name: rahbar-fixtures
+                - op: add
+                  path: /spec/jobTemplate/spec/template/spec/containers/0/volumeMounts/-
+                  value:
+                    name: fixtures
+                    mountPath: /corpus/raw
+                    readOnly: true
+                - op: add
+                  path: /spec/jobTemplate/spec/template/spec/imagePullSecrets
+                  value:
+                    - name: rahbar-regcred
+            # api: three replicas must fit next to chroma, redis, ui and ingress-nginx on one
+            # 4-vCPU runner node, so requests are trimmed. Pull secret for Docker Hub.
+            - target:
+                group: apps
+                version: v1
+                kind: Deployment
+                name: api
+              patch: |-
+                - op: add
+                  path: /spec/template/spec/containers/0/resources
+                  value:
+                    requests:
+                      cpu: 100m
+                      memory: 256Mi
+                    limits:
+                      cpu: "1"
+                      memory: 1Gi
+                - op: add
+                  path: /spec/template/spec/imagePullSecrets
+                  value:
+                    - name: rahbar-regcred
+            - target:
+                group: apps
+                version: v1
+                kind: Deployment
+                name: ui
+              patch: |-
+                - op: add
+                  path: /spec/template/spec/imagePullSecrets
+                  value:
+                    - name: rahbar-regcred
+          EOF
+          echo "::group::rendered cd overlay (images and runtime values)"
+          kustomize build k8s/overlays/cd | grep -E '^\s+(image|EMBED_MODEL|LLM_PROVIDER|RELEVANCE_FLOOR|RETRIEVER):' || true
+          echo "::endgroup::"
+          rendered=$(kustomize build k8s/overlays/cd)
+          grep -q 'name: rahbar-fixtures' <<<"$rendered" || { echo "::error::fixtures volume missing from the rendered cd overlay"; exit 1; }
+          if grep -q 'initContainers:' <<<"$rendered"; then
+            echo "::error::an initContainer survived in the rendered cd overlay"; exit 1
+          fi
+
+      # Namespace, then the two objects that are never in Git: the LLM key Secret (from
+      # the GitHub secret when present, a placeholder otherwise; the stub provider does
+      # not read it) and the Docker Hub pull secret. Then the fixture corpus ConfigMap.
+      - name: Create namespace, Secrets and the fixtures ConfigMap
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create secret generic rahbar-secret -n "$NS" \
+            --from-literal=LLM_API_KEY="${LLM_API_KEY:-unset}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create secret docker-registry rahbar-regcred -n "$NS" \
+            --docker-server="$REGISTRY" \
+            --docker-username="$DOCKERHUB_USERNAME" \
+            --docker-password="$DOCKERHUB_TOKEN" \
+            --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create configmap rahbar-fixtures -n "$NS" --from-file=eval/fixtures/ \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Apply the release
+        run: |
+          set -euo pipefail
+          kustomize build k8s/overlays/cd | kubectl apply -f -
+          kubectl get all -n "$NS"
+
+      - name: Wait for Chroma and Redis
+        run: |
+          set -euo pipefail
+          kubectl rollout status statefulset/chroma -n "$NS" --timeout=180s
+          kubectl rollout status deployment/redis -n "$NS" --timeout=120s
+
+      - name: Wait for the indexer Job
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 60); do
+            complete=$(kubectl get job/indexer -n "$NS" -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')
+            failed=$(kubectl get job/indexer -n "$NS" -o jsonpath='{.status.conditions[?(@.type=="Failed")].status}')
+            if [ "$complete" = "True" ]; then
+              echo "indexer Job complete"
+              kubectl logs job/indexer -n "$NS" --all-containers --tail=50 || true
+              exit 0
+            fi
+            if [ "$failed" = "True" ]; then
+              echo "::error::indexer Job failed"
+              break
+            fi
+            sleep 5
+          done
+          echo "::group::indexer logs"
+          kubectl logs job/indexer -n "$NS" --all-containers --tail=200 || true
+          echo "::endgroup::"
+          kubectl get pods -n "$NS"
+          kubectl describe pod -n "$NS" -l app.kubernetes.io/name=indexer || true
+          exit 1
+
+      - name: Wait for the api and ui rollouts
+        run: |
+          set -euo pipefail
+          kubectl rollout status deployment/api -n "$NS" --timeout=300s
+          kubectl rollout status deployment/ui -n "$NS" --timeout=120s
+
+      # The release is only "deployed" when it answers through the Ingress: HTTP 200 and
+      # a body that is an AskResponse (carries answered_from_context). /healthz is not
+      # routed by the Ingress, so the question endpoint is the probe.
+      - name: Smoke test through the Ingress
+        run: |
+          set -euo pipefail
+          curl -fsS -H "Host: ${INGRESS_HOST}" "${INGRESS_URL}/" -o /dev/null -w 'ui: HTTP %{http_code}\n'
+          code=$(curl -sS -o /tmp/ask.json -w '%{http_code}' \
+            -H "Host: ${INGRESS_HOST}" -H 'Content-Type: application/json' \
+            -X POST "${INGRESS_URL}/api/ask" \
+            -d '{"question":"When is a student placed on academic warning?"}')
+          echo "api: HTTP ${code}"
+          if [ "$code" != "200" ]; then
+            echo "::error::POST /api/ask returned HTTP ${code}"
+            cat /tmp/ask.json || true
+            exit 1
+          fi
+          python3 - <<'EOF'
+          import json, sys
+          body = json.load(open("/tmp/ask.json", encoding="utf-8"))
+          if "answered_from_context" not in body:
+              sys.exit(f"response is not an AskResponse (no answered_from_context): {body}")
+          print(json.dumps(body, indent=2))
+          print(f"\nanswered_from_context={body['answered_from_context']} provider={body.get('provider')}")
+          EOF
+
+      - name: Show the running release
+        run: |
+          set -euo pipefail
+          echo "commit: ${GITHUB_SHA}"
+          for deploy in api ui; do
+            printf '%s: ' "deployment/${deploy}"
+            kubectl get "deployment/${deploy}" -n "$NS" -o jsonpath='{.spec.template.spec.containers[0].image}'
+            echo
+          done
+          printf 'job/indexer: '
+          kubectl get job/indexer -n "$NS" -o jsonpath='{.spec.template.spec.containers[0].image}'
+          echo
+          kubectl get pods -n "$NS" -o wide
+
+      - name: Diagnostics
+        if: failure()
+        run: |
+          echo "::group::objects"
+          kubectl get all,ingress,networkpolicy,pvc -n "$NS" -o wide || true
+          echo "::endgroup::"
+          echo "::group::events"
+          kubectl get events -n "$NS" --sort-by=.lastTimestamp || true
+          echo "::endgroup::"
+          echo "::group::describe pods"
+          kubectl describe pods -n "$NS" || true
+          echo "::endgroup::"
+          for app in api indexer chroma redis ui; do
+            echo "::group::logs ${app}"
+            kubectl logs -n "$NS" -l "app.kubernetes.io/name=${app}" --all-containers --prefix --tail=200 || true
+            echo "::endgroup::"
+          done
+          echo "::group::ingress-nginx"
+          kubectl get pods -n ingress-nginx -o wide || true
+          kubectl logs -n ingress-nginx -l app.kubernetes.io/component=controller --tail=100 || true
+          echo "::endgroup::"
