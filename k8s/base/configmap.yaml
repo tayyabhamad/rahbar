@@ -1,0 +1,35 @@
+# Shipped defaults for the api and the indexer (docs/ARCHITECTURE.md, "Configuration").
+# Both read environment variables only; EMBED_MODEL is the shared pin that the api checks
+# against the collection's metadata on /readyz. Overlays patch the keys that differ.
+# Every value is a string: ConfigMap data cannot hold numbers or booleans.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rahbar-config
+  labels:
+    app.kubernetes.io/name: rahbar-config
+data:
+  RETRIEVER: "chroma"
+  LLM_PROVIDER: "ollama-host"
+  EMBED_MODEL: "nomic-embed-text"
+  LLM_MODEL: "llama3.2:3b"
+  OLLAMA_URL: "http://host.minikube.internal:11434"
+  HOSTED_BASE_URL: ""
+  CHROMA_HOST: "chroma"
+  CHROMA_PORT: "8000"
+  CHROMA_COLLECTION: "rahbar"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  TOP_K: "5"
+  RELEVANCE_FLOOR: "0.45"
+  CACHE_THRESHOLD: "0.92"
+  CACHE_TTL_SECONDS: "86400"
+  # 0.1: the answers are facts plus strict JSON, so near-deterministic; not 0 because a 3B
+  # model at temperature 0 tends to repeat itself and loop.
+  TEMPERATURE: "0.1"
+  LLM_TIMEOUT_SECONDS: "120"
+  CHUNK_SIZE: "250"
+  CHUNK_OVERLAP: "40"
+  CORPUS_DIR: "/corpus/raw"
+  OCR_ENABLED: "true"
+  LOG_LEVEL: "INFO"

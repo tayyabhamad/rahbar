@@ -1,0 +1,35 @@
+# One host, two paths. The ui calls /api/ask on its own origin, so the Ingress (not nginx
+# in the ui pod) is what joins the two Services. Locally: `minikube addons enable ingress`
+# and `rahbar.local` in /etc/hosts (or `make ask INGRESS_IP=127.0.0.1` behind minikube tunnel).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rahbar
+  labels:
+    app.kubernetes.io/name: rahbar
+  annotations:
+    # A grounded answer from a 3B model can take longer than ingress-nginx's 60 s default;
+    # match LLM_TIMEOUT_SECONDS (120) with headroom so the api, not the proxy, times out.
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "180"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "180"
+    nginx.ingress.kubernetes.io/proxy-body-size: "64k"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: rahbar.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 8000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ui
+                port:
+                  number: 8080

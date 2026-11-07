@@ -1,0 +1,10 @@
+# Production retrieval and generation settings. These equal the base defaults today; the
+# file exists so the deploy step has one place to override (e.g. LLM_PROVIDER=hosted plus
+# HOSTED_BASE_URL) without touching the base.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rahbar-config
+data:
+  RETRIEVER: "chroma"
+  LLM_PROVIDER: "ollama-host"

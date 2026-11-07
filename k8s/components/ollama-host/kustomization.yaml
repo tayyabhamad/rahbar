@@ -1,0 +1,7 @@
+# Kustomize component: lets api and indexer reach Ollama running on the laptop/host.
+# Included by the dev and prod overlays; ci uses the stub provider and leaves it out.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+resources:
+  - networkpolicy.yaml

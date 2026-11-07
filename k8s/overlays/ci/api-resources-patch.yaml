@@ -1,0 +1,14 @@
+# Smaller api requests so 3 replicas schedule on a single kind node. Limits stay as in base.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+spec:
+  template:
+    spec:
+      containers:
+        - name: api
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi

@@ -1,0 +1,98 @@
+# The indexer Job: the ONLY writer of the Chroma collection. It runs once and exits; the api
+# never indexes on start-up (three replicas would be three writers racing one volume).
+#
+# How the corpus gets in (docs/ARCHITECTURE.md, "How the corpus reaches the Job"): the
+# `fetch` initContainer (same image) copies /app/corpus-src (fetch.py + sources.yaml) into
+# the `corpus` emptyDir and runs fetch.py, which downloads one document at a time with a
+# 2 s pause and writes /corpus/raw/*.pdf and /corpus/raw/_index.json. The main container
+# then indexes CORPUS_DIR=/corpus/raw.
+#
+# A finished Job is immutable; it is cleaned up an hour after it finishes. To re-index on
+# demand, create a Job from the CronJob's identical template instead of re-applying this:
+#   kubectl create job --from=cronjob/reindex manual-reindex-1 -n rahbar
+#
+# Resource numbers are starting points (embedding is memory heavy); revisit with
+# `kubectl top pods -n rahbar` while the Job runs (docs/evidence).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: indexer
+  labels:
+    app.kubernetes.io/name: indexer
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: indexer
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: indexer
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: fetch
+          image: rahbar-indexer:dev
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c", "cp -r /app/corpus-src/. /corpus/ && cd /corpus && python fetch.py"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: corpus
+              mountPath: /corpus
+            - name: tmp
+              mountPath: /tmp
+      containers:
+        - name: indexer
+          image: rahbar-indexer:dev
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: rahbar-config
+          env:
+            - name: CORPUS_DIR
+              value: /corpus/raw
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1536Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: corpus
+              mountPath: /corpus
+            # OCR (pdf2image, pytesseract) writes page images to the temp dir.
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: corpus
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}

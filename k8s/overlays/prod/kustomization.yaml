@@ -1,0 +1,29 @@
+# prod: the CD deploy target. Images come from Docker Hub tagged with the git SHA; cd.yml
+# runs, from this directory:
+#   kustomize edit set image rahbar-api=docker.io/$DOCKERHUB_USERNAME/rahbar-api:$GITHUB_SHA
+#   (and the same for rahbar-indexer and rahbar-ui)
+# so the names/tags below are placeholders that CD overwrites. Never :latest.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../../base
+
+# LLM_PROVIDER=ollama-host needs the host-egress rule; a `hosted` provider is covered by
+# the base 80/443 rule and this component becomes a no-op. Adjust the cidr for the prod host.
+components:
+- ../../components/ollama-host
+
+images:
+  - name: rahbar-api
+    newName: docker.io/DOCKERHUB_USERNAME/rahbar-api
+    newTag: set-by-cd
+  - name: rahbar-indexer
+    newName: docker.io/DOCKERHUB_USERNAME/rahbar-indexer
+    newTag: set-by-cd
+  - name: rahbar-ui
+    newName: docker.io/DOCKERHUB_USERNAME/rahbar-ui
+    newTag: set-by-cd
+
+patches:
+- path: configmap-patch.yaml

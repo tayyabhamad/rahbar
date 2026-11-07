@@ -1,0 +1,43 @@
+# ci: the e2e-eval job on kind. No model and no network: EMBED_MODEL=local-hash-v1 (the
+# hashed bag-of-words embedder) with the stub LLM provider, against a real Chroma. The
+# corpus is the three fixture documents from eval/fixtures/, delivered as a ConfigMap
+# instead of the fetch initContainer. The workflow creates it before applying:
+#   kubectl create namespace rahbar
+#   kubectl create configmap rahbar-fixtures -n rahbar --from-file=eval/fixtures/
+#   kubectl apply -k k8s/overlays/ci
+# (discover() skips README.md and reads doc_version/superseded from the .md front matter.)
+# The Ollama host-egress component is not included: nothing here talks to Ollama.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+images:
+  - name: rahbar-api
+    newName: rahbar-api
+    newTag: ci
+  - name: rahbar-indexer
+    newName: rahbar-indexer
+    newTag: ci
+  - name: rahbar-ui
+    newName: rahbar-ui
+    newTag: ci
+
+patches:
+  - path: configmap-patch.yaml
+  # Three api replicas must fit on one kind node next to chroma, redis and the Job.
+  - path: api-resources-patch.yaml
+  # Drop the fetch initContainer and mount the fixtures ConfigMap at /corpus/raw.
+  - path: job-fixtures-patch.yaml
+    target:
+      group: batch
+      version: v1
+      kind: Job
+      name: indexer
+  - path: cronjob-fixtures-patch.yaml
+    target:
+      group: batch
+      version: v1
+      kind: CronJob
+      name: reindex

@@ -1,0 +1,216 @@
+# Deny everything, then allow exactly the paths in docs/ARCHITECTURE.md "Network paths":
+#
+#   ingress-nginx (ns ingress-nginx)  -> ui      8080
+#   ingress-nginx, ui                 -> api     8000
+#   api, indexer                      -> chroma  8000
+#   api                               -> redis   6379
+#   every pod                         -> kube-dns (kube-system) 53 UDP/TCP
+#   api, indexer                      -> the internet 80/443 (hosted provider, corpus fetch)
+#   api, indexer                      -> Ollama on the host 11434: dev/prod overlays only
+#                                        (k8s/components/ollama-host), the IP is per cluster.
+#
+# Egress is denied too, so each path appears twice: as ingress on the destination and as
+# egress on the source. The ui pod can reach nothing but DNS; the browser, not nginx, calls /api.
+# Requires a CNI that enforces NetworkPolicy (minikube: --cni=calico, as in `make cluster`).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+  labels:
+    app.kubernetes.io/name: rahbar
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress", "Egress"]
+---
+# DNS for every pod: Service names (chroma, redis) and host.minikube.internal resolve
+# through CoreDNS.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  labels:
+    app.kubernetes.io/name: rahbar
+spec:
+  podSelector: {}
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+# ingress-nginx -> ui:8080. The minikube addon and the upstream Helm chart both run the
+# controller in namespace `ingress-nginx`.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-ui
+  labels:
+    app.kubernetes.io/name: ui
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ui
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+# ingress-nginx, ui -> api:8000
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-api
+  labels:
+    app.kubernetes.io/name: api
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: api
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ui
+      ports:
+        - protocol: TCP
+          port: 8000
+---
+# api, indexer -> chroma:8000 (the api reads, the indexer is the only writer)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-chroma
+  labels:
+    app.kubernetes.io/name: chroma
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: chroma
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: api
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: indexer
+      ports:
+        - protocol: TCP
+          port: 8000
+---
+# api -> redis:6379
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-redis
+  labels:
+    app.kubernetes.io/name: redis
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: api
+      ports:
+        - protocol: TCP
+          port: 6379
+---
+# api egress: chroma, redis, and the internet on 80/443 for the `hosted` provider.
+# Private ranges are carved out of 0.0.0.0/0 so "the internet" cannot mean other pods,
+# Services or the node network. (Ollama on the host is a separate, overlay-specific rule.)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-egress
+  labels:
+    app.kubernetes.io/name: api
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: api
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: chroma
+      ports:
+        - protocol: TCP
+          port: 8000
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+---
+# indexer egress: chroma (write the collection) and the internet on 80/443 (the fetch
+# initContainer downloads the corpus; the main container embeds through Ollama, which is
+# the overlay-specific host rule, or a hosted endpoint over 443).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: indexer-egress
+  labels:
+    app.kubernetes.io/name: indexer
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: indexer
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: chroma
+      ports:
+        - protocol: TCP
+          port: 8000
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80

@@ -1,0 +1,23 @@
+# JSON6902 patch for Job/indexer (target set in kustomization.yaml).
+# 1. No fetch initContainer: CI has no network and the corpus is the fixtures ConfigMap.
+# 2. The `corpus` volume becomes the rahbar-fixtures ConfigMap (created by the workflow).
+# 3. It is mounted at /corpus/raw, where CORPUS_DIR points. Whole lists are replaced so
+#    the result does not depend on element order in the base.
+- op: remove
+  path: /spec/template/spec/initContainers
+- op: replace
+  path: /spec/template/spec/volumes
+  value:
+    - name: corpus
+      configMap:
+        name: rahbar-fixtures
+    - name: tmp
+      emptyDir: {}
+- op: replace
+  path: /spec/template/spec/containers/0/volumeMounts
+  value:
+    - name: corpus
+      mountPath: /corpus/raw
+      readOnly: true
+    - name: tmp
+      mountPath: /tmp
