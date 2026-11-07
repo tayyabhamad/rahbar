@@ -70,15 +70,36 @@ def run_pipeline(settings: IndexerSettings) -> int:
     from .extract import extract
     from .store import store
 
+    from .chunk import storage_amplification
+    from .tokens import count_tokens
+
     documents = discover(settings.corpus_dir)
     if not documents:
         raise SystemExit(f"no documents found in {settings.corpus_dir}")
     all_chunks: list[Chunk] = []
+    original_tokens = stored_tokens = 0
     for path, doc_version, superseded in documents:
+        if not path.exists():
+            log("document missing; skipping", source=path.name)
+            continue
         doc = clean(extract(str(path), doc_version, superseded))
         pieces = chunk(doc, settings.chunk_size, settings.chunk_overlap)
-        log("chunked", source=path.name, chunks=len(pieces))
+        original = sum(count_tokens(p.text) for p in doc.pages)
+        stored = sum(count_tokens(c.text) for c in pieces)
+        original_tokens += original
+        stored_tokens += stored
+        log("chunked", source=path.name, pages=len(doc.pages),
+            ocr_pages=sum(1 for p in doc.pages if p.ocr), chunks=len(pieces),
+            original_tokens=original, stored_tokens=stored,
+            amplification=round(storage_amplification(doc, pieces), 3),
+            doc_version=doc_version, superseded=superseded)
         all_chunks.extend(pieces)
+    if not all_chunks:
+        raise SystemExit("every document produced zero chunks; nothing to index")
+    log("corpus chunked", documents=len(documents), chunks=len(all_chunks),
+        chunk_size=settings.chunk_size, chunk_overlap=settings.chunk_overlap,
+        original_tokens=original_tokens, stored_tokens=stored_tokens,
+        amplification=round(stored_tokens / max(original_tokens, 1), 3))
     vectors = embed([c.text for c in all_chunks], settings)
     return store(all_chunks, vectors, settings)
 
