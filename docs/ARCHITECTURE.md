@@ -29,7 +29,7 @@ Everything lives in the namespace `rahbar`.
 | Deployment | `ui` | image `rahbar-ui`, port 8080, 1 replica, `emptyDir` at `/tmp` |
 | StatefulSet | `chroma` | image `chromadb/chroma:1.0.12`, port 8000, data at `/data`, `volumeClaimTemplates` (`chroma-data`, 2Gi); heartbeat `GET /api/v2/heartbeat` |
 | Deployment + PVC | `redis` | image `redis:7.4-alpine`, port 6379, `--appendonly yes`, PVC `redis-data` (1Gi) at `/data` |
-| Job | `indexer` | image `rahbar-indexer`, `restartPolicy: OnFailure`, `backoffLimit: 3`, `ttlSecondsAfterFinished: 3600` |
+| Job | `indexer` | image `rahbar-indexer`, `restartPolicy: OnFailure`, `backoffLimit: 6`, `ttlSecondsAfterFinished: 3600` |
 | CronJob | `reindex` | weekly (`0 3 * * 1`), identical pod template to the Job; `concurrencyPolicy: Forbid` |
 | Service x4 | `api`, `ui`, `chroma`, `redis` | all `ClusterIP`; chroma and redis are never NodePort or LoadBalancer |
 | Ingress | `rahbar` | host `rahbar.local`; `/api` (Prefix) to `api:8000`, `/` (Prefix) to `ui:8080`; `ingressClassName: nginx` |

@@ -34,18 +34,27 @@ class ChromaRetriever:
                  client: Any | None = None) -> None:
         self.settings = settings
         self.embedder = embedder or Embedder(settings)
-        if client is None:
-            import chromadb  # the thin client, from chromadb-client in requirements.txt
-            from chromadb.config import Settings as ChromaSettings
-
-            client = chromadb.HttpClient(host=settings.chroma_host, port=settings.chroma_port,
-                                         settings=ChromaSettings(anonymized_telemetry=False))
-        self.client = client
+        self._client: Any | None = client
         self._collection: Any | None = None
         self._info: dict[str, Any] | None = None
         self._info_at = 0.0
 
     # -- connection ---------------------------------------------------------------
+
+    @property
+    def client(self) -> Any:
+        """The Chroma client, created on first use. `chromadb.HttpClient` contacts the
+        server when it is built, so building it in __init__ would crash the API process
+        whenever Chroma is down; instead the process starts, /readyz reports Chroma
+        unreachable, and the pod waits at 0/1 READY until Chroma is back."""
+        if self._client is None:
+            import chromadb  # the thin client, from chromadb-client in requirements.txt
+            from chromadb.config import Settings as ChromaSettings
+
+            self._client = chromadb.HttpClient(
+                host=self.settings.chroma_host, port=self.settings.chroma_port,
+                settings=ChromaSettings(anonymized_telemetry=False))
+        return self._client
 
     def heartbeat(self) -> None:
         self.client.heartbeat()

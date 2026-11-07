@@ -18,7 +18,7 @@ re-embed the corpus, readiness could not distinguish "still indexing" from "brok
 refreshing a document would mean redeploying the API.
 
 **The object that prevents it: a Job.** `kind: Job` at `k8s/base/indexer-job.yaml:17`,
-run-to-completion with `restartPolicy: OnFailure` (`:30`) and `backoffLimit: 3` (`:23`);
+run-to-completion with `restartPolicy: OnFailure` (`:30`) and `backoffLimit: 6` (`:23`);
 the weekly `CronJob` (`k8s/base/reindex-cronjob.yaml:9`, schedule `:15`,
 `concurrencyPolicy: Forbid` `:17`) is the same template. The API only reads
 (`api/app/main.py:41`); the store stage is the only writer in the repository
@@ -107,7 +107,7 @@ measured peak is, say, 900 Mi, 1536Mi stands; if it is 1300 Mi the limit moves t
 **When it is wrong**: the kernel OOM-kills the process, the container terminates with
 **exit code 137** (128 + SIGKILL 9), `kubectl describe pod` shows
 `Last State: Terminated, Reason: OOMKilled, Exit Code: 137`, and the Job retries up to
-`backoffLimit: 3` (`indexer-job.yaml:23`) with the same result each time, because the
+`backoffLimit: 6` (`indexer-job.yaml:23`) with the same result each time, because the
 corpus does not shrink between attempts: a deterministic failure, not a flake. Check with
 `kubectl get pod -n rahbar -l app.kubernetes.io/name=indexer -o jsonpath='{.items[*].status.containerStatuses[*].lastState.terminated.exitCode}'`.
 The old index keeps serving throughout (ADR 0001).

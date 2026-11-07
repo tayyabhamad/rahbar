@@ -86,3 +86,13 @@ def test_collection_info_and_generation() -> None:
     r = _retriever()
     assert r.collection_info()["count"] == 3
     assert r.index_generation() == "g1"
+
+
+def test_constructing_the_retriever_never_contacts_chroma() -> None:
+    """chromadb.HttpClient connects when built; building it lazily is what keeps the API
+    process alive (and merely not-ready) while Chroma is down."""
+    from app.services.readiness import check_readiness
+
+    r = ChromaRetriever(settings_with(chroma_host="127.0.0.1", chroma_port=1))
+    result = check_readiness(settings_with(), r, None)
+    assert not result.ready and result.failed == "chroma"

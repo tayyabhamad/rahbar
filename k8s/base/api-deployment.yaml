@@ -29,6 +29,9 @@ spec:
     spec:
       serviceAccountName: api
       automountServiceAccountToken: false
+      # No service-link env vars: Kubernetes would inject CHROMA_PORT=tcp://... for the chroma
+      # Service, which Chroma reads as its own config and crashes on; nothing here needs them.
+      enableServiceLinks: false
       # preStop sleeps 5 s so the endpoint controller removes the pod from the Service
       # before uvicorn gets SIGTERM; 20 s total leaves 15 s for in-flight LLM calls to end.
       terminationGracePeriodSeconds: 20

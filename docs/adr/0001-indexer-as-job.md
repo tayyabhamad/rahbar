@@ -34,7 +34,7 @@ Indexing is a separate workload with the API as a pure reader
 (`api/app/main.py:41`, `indexer/pipeline/store.py:1`):
 
 * A **Job** `indexer` (`k8s/base/indexer-job.yaml:17`) runs the pipeline once and exits
-  (`indexer/pipeline/run.py:107-128`). `restartPolicy: OnFailure` and `backoffLimit: 3`
+  (`indexer/pipeline/run.py:107-128`). `restartPolicy: OnFailure` and `backoffLimit: 6`
   (`indexer-job.yaml:30`, `:23`) retry a failed run; `ttlSecondsAfterFinished: 3600`
   (`:24`) removes the finished pod. A `fetch` initContainer downloads the corpus into an
   `emptyDir` first (`indexer-job.yaml:40-63`, `docs/ARCHITECTURE.md:140-149`).

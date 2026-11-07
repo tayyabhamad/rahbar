@@ -16,8 +16,12 @@ import sys
 import time
 from pathlib import Path
 
+from typing import Any
+
 from .config import IndexerSettings, get_settings
 from .models import Chunk
+
+CHROMA_WAIT_SECONDS = int(os.environ.get("CHROMA_WAIT_SECONDS", 300))
 
 
 def log(msg: str, **fields: object) -> None:
@@ -63,7 +67,30 @@ def discover(corpus_dir: str) -> list[tuple[Path, str, bool]]:
     return found
 
 
-def run_pipeline(settings: IndexerSettings) -> int:
+def wait_for_chroma(settings: IndexerSettings, timeout: float = CHROMA_WAIT_SECONDS,
+                    pause: float = 5.0) -> Any:
+    """A connected Chroma client, retrying until `timeout` seconds have passed.
+
+    On a fresh cluster the Job and the chroma StatefulSet are applied together, so
+    the first attempts land before Chroma listens. Waiting here, instead of failing
+    and letting the Job's backoff retry, keeps the backoffLimit for real failures."""
+    from .store import get_client
+
+    deadline = time.monotonic() + timeout
+    attempt = 0
+    while True:
+        attempt += 1
+        try:
+            return get_client(settings)
+        except Exception as exc:
+            if time.monotonic() >= deadline:
+                raise SystemExit(f"chroma at {settings.chroma_host}:{settings.chroma_port} "
+                                 f"not reachable after {timeout:.0f}s: {exc}") from exc
+            log("waiting for chroma", attempt=attempt, error=str(exc)[:120])
+            time.sleep(pause)
+
+
+def run_pipeline(settings: IndexerSettings, client: Any | None = None) -> int:
     from .chunk import chunk
     from .clean import clean
     from .embed import embed
@@ -101,7 +128,7 @@ def run_pipeline(settings: IndexerSettings) -> int:
         original_tokens=original_tokens, stored_tokens=stored_tokens,
         amplification=round(stored_tokens / max(original_tokens, 1), 3))
     vectors = embed([c.text for c in all_chunks], settings)
-    return store(all_chunks, vectors, settings)
+    return store(all_chunks, vectors, settings, client)
 
 
 def main() -> int:
@@ -114,13 +141,13 @@ def main() -> int:
         pod=os.environ.get("HOSTNAME", "-"))
     started = time.perf_counter()
     try:
+        client = wait_for_chroma(settings)
         if args.dummy:
             from .dummy import write_dummy_index
-            from .store import get_client
 
-            count = write_dummy_index(settings, get_client(settings))
+            count = write_dummy_index(settings, client)
         else:
-            count = run_pipeline(settings)
+            count = run_pipeline(settings, client)
     except NotImplementedError as exc:
         log("indexer stage not implemented yet", error=str(exc))
         return 2
