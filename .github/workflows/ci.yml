@@ -396,7 +396,7 @@ jobs:
         run: |
           set -euo pipefail
           curl -fsS -H "Host: ${INGRESS_HOST}" "${INGRESS_URL}/" -o /dev/null -w 'ui: HTTP %{http_code}\n'
-          curl -fsS -H "Host: ${INGRESS_HOST}" -H 'Content-Type: application/json' \
+          curl -fsS --retry 10 --retry-delay 3 --retry-all-errors -H "Host: ${INGRESS_HOST}" -H 'Content-Type: application/json' \
             -X POST "${INGRESS_URL}/api/ask" \
             -d '{"question":"When is a student placed on academic warning?"}' \
             | python -m json.tool
