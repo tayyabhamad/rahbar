@@ -69,7 +69,13 @@ Regulations" is set in letter-spaced, multi-column display type; its text comes 
 different clause numbers, property 2/7) but the golden set does not rely on it.
 (2) Without OCR the 2023 rules are one cover chunk, so the explicit "previous 2023
 version" question (q15) cannot be answered locally; it is the reason the version-type
-recall is 0.33 in the local numbers. (3) Table-of-contents pages produce chunks under the
+recall is 0.33 in the local numbers. On the cluster, where the indexer image has
+tesseract, the same document yields 60 chunks and the ORIC policy 26
+(`docs/evidence/indexer-job-indexer-log.txt`), and the same golden set with the same
+embedder scores recall@5 0.714 overall and **0.667 on version questions** (q15 is now
+answered); with the OCR'd vocabulary two must-abstain questions also climb above the
+0.21 floor (best 0.266 and 0.272), which is the lexical embedder's limit again, not a
+chunking change. (3) Table-of-contents pages produce chunks under the
 "VISION Table of Contents" label; they are harmless noise.
 
 ## Cleaning

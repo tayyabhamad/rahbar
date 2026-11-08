@@ -66,8 +66,11 @@ Chroma for the query, and for seconds on the LLM (`api/app/providers/llm/ollama.
 timeout 120 s). A worker blocked on network I/O consumes no CPU. So under load the
 service can be saturated, with every request queued behind a model call, while CPU sits
 at a few percent of the request: the HPA reads "idle" and never scales. This is the
-section 4.5 paradox (`TODO(students): check the wording of the 4.5 question against the
-handout; as we read it, CPU shows ~8 % while p95 latency climbs`): the metric moves with
+section 4.5 paradox, which the handout states as: "while your API waits on the LLM its
+CPU stays low, because generation is I/O-bound from the pod's point of view"; clusters
+average about 8 % CPU utilisation because requests were written once and never revisited.
+On our minikube the HPA read `cpu: 3%/70%` with three replicas idle
+(`docs/evidence/kubectl-get-hpa.txt`). The metric moves with
 the work the pod does, not with the work the pod is waiting for. The `ask` route is a
 sync `def` (`api/app/routes/ask.py:14`), so FastAPI runs it in the default threadpool
 (40 threads): a pod holds at most ~40 in-flight LLM calls, and that number, not CPU, is
@@ -95,9 +98,14 @@ Shipped: request `512Mi`, limit `1536Mi` (`k8s/base/indexer-job.yaml:77`, `:80`;
 (`indexer/pipeline/extract.py:44`, `:79-80`), and the chunk texts plus their vectors held
 in memory before the batched store (`indexer/pipeline/run.py:103-104`).
 
-`TODO(cluster): peak RSS of the indexer container, sampled every 2 s while the Job runs:
-watch -n 2 'kubectl top pods -n rahbar -l app.kubernetes.io/name=indexer --containers'
-(needs the metrics-server addon from make cluster); record the highest MEMORY value.`
+**Measured** on minikube (metrics-server addon, 20 s samples while the Job ran,
+`docs/evidence/kubectl-top-indexer-samples.txt`): the indexer container peaked at
+**1054 Mi** while OCR-ing the scanned PDFs and dropped to 557 Mi during chunking and
+storing; CPU sat at 998-999m, i.e. pinned at its 1000m limit (throttled, slow but
+alive). Limit `1536Mi` (`k8s/base/indexer-job.yaml`, `resources.limits.memory`) leaves a
+margin of 482 Mi, 46 % over the measured peak, which is above the ×1.3 rule below; the
+request of 512Mi is what the scheduler reserves. The whole Job (fetch, OCR of 32 pages,
+703 chunks, embed, store) took about 3.5 minutes.
 
 **Margin rule**: limit ≈ peak × 1.3, rounded up to a power-of-two-ish Mi value, so a
 larger annual report or one more scanned document does not tip it over; request ≈ the

@@ -80,8 +80,10 @@ the entries: Chroma (a second collection) or Redis.
 * **Threshold is a tuning decision.** 0.92 was chosen to avoid serving an answer about
   the 2023 rule to a question about the 2026 rule when both mention attendance; the
   measured false hit that ruled out a lower value, and the thresholds tried, are
-  `TODO(cluster)` in `docs/PIPELINE.md` ("Semantic cache") until the evaluation has run
-  against the real corpus with `nomic-embed-text`.
+  in `docs/PIPELINE.md` ("Semantic cache"): with the lexical embedder 0.35 is ruled out
+  by a false hit between the "previous 2023 version" and "clause 1.21" questions (0.367),
+  0.40 is the lowest safe value, and 0.92 is kept for the dense model, to be re-measured
+  there with the same three rows.
 * **Code changes do not invalidate the cache.** The key is namespaced by index
   generation, not by API version, so a fix to the guard regexes or the prompt leaves
   yesterday's answers serving until the TTL expires. That bit us during evaluation

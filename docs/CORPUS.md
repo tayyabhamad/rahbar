@@ -36,8 +36,22 @@ Chunk counts are from the local dry run of extract → clean → chunk at `CHUNK
 `CHUNK_OVERLAP=50` (regex word-tokens) with OCR off: 360 chunks in total (585 at the
 shipped 250/40; see `docs/PIPELINE.md`). In the indexer
 image tesseract and poppler are installed (`indexer/Dockerfile`), so the two scanned
-documents produce more chunks on the cluster; `TODO(cluster): per-document chunk counts
-with OCR on, from the "chunked" log lines of the Job (kubectl logs job/indexer -n rahbar | grep '"chunked"')`.
+documents produce more chunks on the cluster. Measured on minikube on 8 November 2026
+(`docs/evidence/indexer-job-indexer-log.txt`, the `"chunked"` lines of the re-index Job):
+**703 chunks** at 250/40, storage amplification 1.18 (132,381 stored / 111,896 original
+tokens):
+
+| Document | Pages | OCR'd pages | Chunks (cluster, OCR on) | Chunks (laptop, no OCR) |
+| --- | ---: | ---: | ---: | ---: |
+| Undergraduate Academic Rules, Aug 2023 | 26 | 24 | 60 | 1 |
+| Academic Rules Handbook, Jun 2026 | 58 | 5 | 111 | 63 |
+| Prospectus 2026: Academic Rules and Regulations | 5 | 0 | 34 | 19 |
+| Student Handbook, Jun 2026 | 64 | 4 | 157 | 89 |
+| Annual Report 2019-20 | 33 | 0 | 66 | 41 |
+| Annual Report 2023-24 | 85 | 0 | 232 | 145 |
+| Fee Structure page | 1 | 0 | 8 | 8 |
+| Grading page | 1 | 0 | 9 | 7 |
+| Faculty Entrepreneurship and Technical Start-ups Policy | 8 | 8 | 26 | 0 |
 
 ## The seven properties
 
@@ -45,7 +59,7 @@ with OCR on, from the "chunked" log lines of the Job (kubectl logs job/indexer -
 | --- | --- | --- | --- |
 | 1 | At least 6 documents, 40 pages | all nine | 9 documents, 281 pages, 360 chunks locally (`corpus/MANIFEST.md`, dry-run log `corpus chunked`) |
 | 2 | Two versions of one policy | Undergraduate Academic Rules (Aug 2023) vs Academic Rules Handbook (Jun 2026); the Prospectus 2026 is a third rendering of the current rules with its own clause numbers | The 2026 handbook supersedes the 2023 rules. `corpus/sources.yaml:15-25` sets `doc_version` and `superseded`; `fetch.py` copies them into `corpus/raw/_index.json` and `MANIFEST.md`; `indexer/pipeline/run.py:49-53` reads `_index.json`; every chunk carries `doc_version` and `superseded` (`indexer/pipeline/chunk.py:208-216`); the retriever filters `where={"superseded": False}` unless the question asks for an older version (`api/app/retrieval/chroma.py:120-121`, `api/app/services/guards.py:20-29`; the filter is on by default, `api/app/config.py:47-49`). Golden questions q13-q15 (`eval/golden.yaml:118-140`) test it. |
-| 3 | Scanned, image-only PDF | Faculty Entrepreneurship and Technical Start-ups Policy (all 8 pages); Undergraduate Academic Rules Aug 2023 (24 of 26 pages) | Proof from the pipeline: `pdfplumber` returned no text layer on any of the 8 pages, so the local dry run (no tesseract on the laptop) logged `page has no text layer and OCR is unavailable` once per page (`indexer/pipeline/extract.py:177-178`) and `extracted pdf ... lost_pages=8`, and the document produced 0 chunks. `TODO(cluster): paste the pdffonts output; pdffonts is in poppler-utils inside the indexer image: docker run --rm -v "$PWD/corpus/raw:/corpus/raw:ro" --entrypoint pdffonts rahbar-indexer:dev /corpus/raw/faculty-entrepreneurship-and-technical-start-ups-policy.pdf (an empty font list means image-only).` On the cluster the pages are rasterised with pdf2image and read with pytesseract (`extract.py:69-86`); the `ocr_pages` field of the `chunked` log line shows how many. |
+| 3 | Scanned, image-only PDF | Faculty Entrepreneurship and Technical Start-ups Policy (all 8 pages); Undergraduate Academic Rules Aug 2023 (24 of 26 pages) | `pdffonts` on the ORIC policy prints an empty font list (run via the indexer image, which has poppler: `docker run --rm -v "$PWD/corpus/raw:/corpus/raw:ro" --entrypoint pdffonts rahbar-indexer:dev /corpus/raw/faculty-entrepreneurship-and-technical-start-ups-policy.pdf`), while the 2026 handbook lists embedded MyriadPro, Montserrat and Times fonts. On the laptop (no tesseract) the pipeline logs `page has no text layer and OCR is unavailable` for all 8 and 24 pages and the two documents yield 0 and 1 chunks; on the cluster the indexer image OCRs them (`ocr_pages: 8` and `ocr_pages: 24`, `lost_pages: 0`) and they yield 26 and 60 chunks (`docs/evidence/indexer-job-indexer-log.txt`). |
 | 4 | A table with real information | Fee Structure page (tuition per credit hour, admission fee, refund schedule); Grading page (grade-point table); Annual Reports (faculty by campus and department) | HTML tables become pipe rows (`extract.py:199-281`), PDF tables are re-rendered under a `[table]` marker (`extract.py:57-66`, `:163-171`), and a table row is never split (`chunk.py:96-99`). Golden q04, q05, q06, q11, q17, q19 ask for table values. |
 | 5 | Long definitions | Student Handbook (Generative AI policy: what counts as generative AI use, permitted and prohibited uses, numbered sub-sections); Academic Rules Handbook (definitions of academic warning, probation, W grade, condonable absence) | A chunk never crosses a section boundary and sub-clauses stay with their heading (`chunk.py:166-193`); paragraphs longer than the budget split on sentences, not mid-sentence (`chunk.py:146-154`). Golden q07 and q14 target the AI policy. |
 | 6 | A deliberately absent topic | Hostel and transport rules: the prospectus "Transport and Hostel Facilities" PDF is left out (`corpus/sources.yaml:68-71`). The Student Handbook only mentions that in-campus hostels exist at two campuses | A student plausibly asks about hostel allotment, hostel fee or rent, application deadlines, or bus routes and transport fees; none of that is in the corpus. Golden q22 (`eval/golden.yaml:185-191`) is the near miss on purpose; q20 and q21 (parking, laptop scheme) are clean absences. All three carry `must_abstain: true`, and the gate requires every one to be declined (`eval/run_eval.py:31`). |

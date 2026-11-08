@@ -11,3 +11,25 @@ api    10.244.120.87:8000,10.244.120.88:8000,10.244.120.89:8000   12m
 $ curl POST /api/ask through the Ingress while the Job runs
 HTTP 200 in 0.011929s
 $ kubectl wait --for=condition=complete job/manual-reindex-1313 -n rahbar --timeout=1500s
+job.batch/manual-reindex-1313 condition met
+$ kubectl logs job/manual-reindex-1313 -n rahbar -c indexer | grep -E 'upserting|deleted stale|index written|corpus chunked'
+{"ts": "2026-11-08T08:16:11Z", "logger": "rahbar.indexer", "msg": "chunked", "source": "undergraduate-academic-rules-aug-2023.pdf", "pages": 26, "ocr_pages": 24, "chunks": 60, "original_tokens": 6311, "stored_tokens": 6494, "amplification": 1.029, "doc_version
+{"ts": "2026-11-08T08:16:27Z", "logger": "rahbar.indexer", "msg": "chunked", "source": "academic-rules-handbook-jun-2026.pdf", "pages": 58, "ocr_pages": 5, "chunks": 111, "original_tokens": 17557, "stored_tokens": 21131, "amplification": 1.204, "doc_version": 
+{"ts": "2026-11-08T08:16:29Z", "logger": "rahbar.indexer", "msg": "chunked", "source": "prospectus-2026-academic-rules-and-regulations.pdf", "pages": 5, "ocr_pages": 0, "chunks": 34, "original_tokens": 5746, "stored_tokens": 7104, "amplification": 1.236, "doc_
+{"ts": "2026-11-08T08:16:43Z", "logger": "rahbar.indexer", "msg": "chunked", "source": "student-handbook-jun-2026.pdf", "pages": 64, "ocr_pages": 4, "chunks": 157, "original_tokens": 27193, "stored_tokens": 32865, "amplification": 1.209, "doc_version": "2026-0
+{"ts": "2026-11-08T08:16:50Z", "logger": "rahbar.indexer", "msg": "chunked", "source": "annual-report-2019-20.pdf", "pages": 33, "ocr_pages": 0, "chunks": 66, "original_tokens": 10077, "stored_tokens": 11715, "amplification": 1.163, "doc_version": "2019-20", "
+{"ts": "2026-11-08T08:17:05Z", "logger": "rahbar.indexer", "msg": "chunked", "source": "annual-report-2023-24.pdf", "pages": 85, "ocr_pages": 0, "chunks": 232, "original_tokens": 40814, "stored_tokens": 48604, "amplification": 1.191, "doc_version": "2023-24", 
+{"ts": "2026-11-08T08:17:05Z", "logger": "rahbar.indexer", "msg": "chunked", "source": "fee-structure-page.html", "pages": 1, "ocr_pages": 0, "chunks": 8, "original_tokens": 817, "stored_tokens": 794, "amplification": 0.972, "doc_version": "2026-27", "supersed
+{"ts": "2026-11-08T08:17:05Z", "logger": "rahbar.indexer", "msg": "chunked", "source": "grading-page.html", "pages": 1, "ocr_pages": 0, "chunks": 9, "original_tokens": 1121, "stored_tokens": 1192, "amplification": 1.063, "doc_version": "2026", "superseded": fa
+{"ts": "2026-11-08T08:17:36Z", "logger": "rahbar.indexer", "msg": "chunked", "source": "faculty-entrepreneurship-and-technical-start-ups-policy.pdf", "pages": 8, "ocr_pages": 8, "chunks": 26, "original_tokens": 2260, "stored_tokens": 2482, "amplification": 1.0
+{"ts": "2026-11-08T08:17:36Z", "logger": "rahbar.indexer", "msg": "corpus chunked", "documents": 9, "chunks": 703, "chunk_size": 250, "chunk_overlap": 40, "original_tokens": 111896, "stored_tokens": 132381, "amplification": 1.183}
+{"ts": "2026-11-08T08:17:36Z", "logger": "rahbar.indexer.store", "msg": "upserting into the existing collection", "collection": "rahbar", "embed_model": "local-hash-v1", "dimension": 512}
+{"ts": "2026-11-08T08:17:39Z", "logger": "rahbar.indexer.store", "msg": "deleted stale chunks", "count": 5}
+{"ts": "2026-11-08T08:17:39Z", "logger": "rahbar.indexer.store", "msg": "index written", "collection": "rahbar", "chunks": 703, "embed_model": "local-hash-v1", "dimension": 512, "index_generation": "20261108T081736Z"}
+$ kubectl get pods -n rahbar -l app.kubernetes.io/name=api   # no api pod restarted
+NAME                   READY   STATUS    RESTARTS   AGE
+api-798d7894df-l2gtb   1/1     Running   0          8m36s
+api-798d7894df-nhqv8   1/1     Running   0          8m40s
+api-798d7894df-z7qlh   1/1     Running   0          8m45s
+$ /readyz after: the collection carries the new index_generation; the api invalidates the old cache namespace
+{"status":"ready","failed":null,"checks":{"chroma":"reachable","collection":{"name":"rahbar","count":703},"embedding_pin":"ok: local-hash-v1","redis":"reachable"}}
