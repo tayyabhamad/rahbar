@@ -443,7 +443,7 @@ jobs:
         run: |
           set -euo pipefail
           curl -fsS -H "Host: ${INGRESS_HOST}" "${INGRESS_URL}/" -o /dev/null -w 'ui: HTTP %{http_code}\n'
-          code=$(curl -sS -o /tmp/ask.json -w '%{http_code}' \
+          code=$(curl -sS --retry 10 --retry-delay 3 -o /tmp/ask.json -w '%{http_code}' \
             -H "Host: ${INGRESS_HOST}" -H 'Content-Type: application/json' \
             -X POST "${INGRESS_URL}/api/ask" \
             -d '{"question":"When is a student placed on academic warning?"}')
