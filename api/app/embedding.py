@@ -26,7 +26,8 @@ from .embedding_local import LOCAL_HASH_DIM, is_local_hash, local_hash_embed
 log = logging.getLogger("rahbar.embedding")
 
 KNOWN_DIMENSIONS = {"nomic-embed-text": 768, "mxbai-embed-large": 1024, "all-minilm": 384,
-                    "gemini-embedding-001": 3072, "text-embedding-004": 768}
+                    "gemini-embedding-001": 3072, "text-embedding-004": 768, "baai/bge-m3": 1024,
+                    "openai/text-embedding-3-small": 1536}
 RETRIES = 4
 
 

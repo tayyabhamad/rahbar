@@ -4,13 +4,17 @@ metadata:
   name: rahbar-config
 data:
   LLM_PROVIDER: "hosted"
-  HOSTED_BASE_URL: "https://generativelanguage.googleapis.com/v1beta/openai"
-  # Free-tier quota is per model; flash-lite has the most room for the eval runs.
-  LLM_MODEL: "gemini-2.5-flash-lite"
+  # OpenRouter: one key for chat and embeddings (OpenAI-compatible). For Google AI Studio
+  # use https://generativelanguage.googleapis.com/v1beta/openai with gemini-2.5-flash-lite
+  # and gemini-embedding-001 (3072 dims) instead.
+  HOSTED_BASE_URL: "https://openrouter.ai/api/v1"
+  # Cheapest current Gemini flash tier on OpenRouter (USD 0.25 per million prompt tokens).
+  LLM_MODEL: "google/gemini-3.1-flash-lite"
   EMBED_PROVIDER: "hosted"
-  # The pin. 3072-dimensional; the indexer records model and dimension, /readyz checks both.
-  EMBED_MODEL: "gemini-embedding-001"
-  # Cosine scores from gemini-embedding-001 run higher than nomic's; re-measure the floor
-  # (docs/PIPELINE.md, "Relevance floor") and the cache threshold with `make eval`.
-  RELEVANCE_FLOOR: "0.55"
-  CACHE_THRESHOLD: "0.95"
+  # The pin. BGE-M3, 1024 dimensions, 8k context; the indexer records model and dimension
+  # in the collection metadata and /readyz checks both.
+  EMBED_MODEL: "baai/bge-m3"
+  # BGE-M3 cosine scores run higher than the lexical embedder's; re-measure the floor and
+  # the cache threshold with `make eval` (docs/PIPELINE.md) before trusting these.
+  RELEVANCE_FLOOR: "0.45"
+  CACHE_THRESHOLD: "0.92"

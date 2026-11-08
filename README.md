@@ -49,11 +49,11 @@ provider. Design: `docs/ARCHITECTURE.md`; decisions: `docs/adr/`.
   * **local**: Ollama on the laptop, listening on all interfaces so pods can reach it:
     `OLLAMA_HOST=0.0.0.0 ollama serve`, then `ollama pull llama3.2:3b` and
     `ollama pull nomic-embed-text` (overlay `k8s/overlays/dev`, the default)
-  * **hosted**: a free Google AI Studio key (no card; https://aistudio.google.com/apikey),
-    which serves both chat (`gemini-2.5-flash-lite`) and embeddings
-    (`gemini-embedding-001`) through its OpenAI-compatible endpoint
-    (overlay `k8s/overlays/dev-hosted`). Groq and OpenRouter work for chat only; keep
-    embeddings on Ollama with them.
+  * **hosted**: an OpenRouter key (https://openrouter.ai/keys), which serves both chat
+    (`google/gemini-3.1-flash-lite`) and embeddings (`baai/bge-m3`) through its
+    OpenAI-compatible endpoint (overlay `k8s/overlays/dev-hosted`); a Google AI Studio
+    key works the same way with `gemini-2.5-flash-lite` and `gemini-embedding-001`.
+    Groq serves chat only; keep embeddings on Ollama with it.
 * Python 3.12, `make`, `git`
 * On Windows: WSL 2 (Ubuntu). The Makefile needs bash; run everything from the WSL shell
   with the repository on the Linux filesystem or mounted under `/mnt`.

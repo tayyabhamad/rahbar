@@ -26,3 +26,6 @@ htmlcov/
 # Local scratch
 *.log
 .DS_Store
+
+# Local scratch overlays (never committed)
+k8s/overlays/_scratch-*/
