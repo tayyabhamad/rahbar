@@ -128,6 +128,18 @@ variance on repeated identical questions (and, with a weaker model than this one
 `rahbar_llm_retries_total` climbing as replies stop parsing). The eval harness could add a
 repeat-and-compare step for exactly this stage.
 
+## A footnote from the bonus run: a model too small to follow the prompt
+
+Not a knob I turned on purpose, but measured on the cluster with the in-cluster Ollama
+component and `qwen2.5:0.5b` (`docs/evidence/ollama-incluster-ask.txt`): the must-abstain
+parking question got a confident made-up answer with citations attached. Retrieval was
+healthy and identical to the hosted run (the same five chunks at 0.457 and below), the JSON
+validated, and the citations named retrieved passages, so stages A to E and every
+mechanical guardrail passed; only the model's willingness to say "the documents do not
+cover this" failed. It is stage F by elimination, and the one place the lecture's rule
+("blame the model last") ends with the model. The gate would catch it (abstention
+correctness drops below 1.0), which is the point of having that metric at all.
+
 ## D · Prompt: to run on the cluster
 
 Needs a real model; the stub never reads the prompt.

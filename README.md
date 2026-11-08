@@ -54,6 +54,11 @@ provider. Design: `docs/ARCHITECTURE.md`; decisions: `docs/adr/`.
     OpenAI-compatible endpoint (overlay `k8s/overlays/dev-hosted`); a Google AI Studio
     key works the same way with `gemini-2.5-flash-lite` and `gemini-embedding-001`.
     Groq serves chat only; keep embeddings on Ollama with it.
+  * **in-cluster (bonus)**: Ollama as a Deployment inside the namespace with a PVC for the
+    weights, pulled by an initContainer; overlay `k8s/overlays/dev-ollama-incluster`.
+    Wants `minikube start --memory=8192` for `llama3.2:3b`; measured on a 3 GB node with
+    `qwen2.5:0.5b` in `docs/evidence/ollama-incluster-*.txt` (see docs/ARCHITECTURE.md,
+    "In-cluster Ollama").
 * Python 3.12, `make`, `git`
 * On Windows: WSL 2 (Ubuntu). The Makefile needs bash; run everything from the WSL shell
   with the repository on the Linux filesystem or mounted under `/mnt`.
@@ -76,6 +81,10 @@ make apply            # = kubectl apply -k k8s/overlays/dev
 # then apply the dev-hosted overlay in place of `make apply`.
 export LLM_API_KEY=...; make secret        # or put LLM_API_KEY=... in a gitignored .env, then: make secret
 kubectl apply -k k8s/overlays/dev-hosted
+
+# Bonus: Ollama inside the cluster instead of on the laptop (bigger node, see above).
+kubectl apply -k k8s/overlays/dev-ollama-incluster
+kubectl rollout status deployment/ollama -n rahbar --timeout=900s   # pull + load the weights
 
 # Wait for the stores, then the index, then the api (which sits at 0/1 until the index exists).
 kubectl rollout status statefulset/chroma -n rahbar --timeout=180s

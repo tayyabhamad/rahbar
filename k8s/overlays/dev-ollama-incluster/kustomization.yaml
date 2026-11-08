@@ -1,0 +1,26 @@
+# dev-ollama-incluster: minikube on a laptop with Ollama INSIDE the cluster (bonus mode).
+# Same as dev except the ollama-incluster component replaces ollama-host: an Ollama
+# Deployment with a PVC for the weights, a Service, its NetworkPolicy paths, and
+# LLM_PROVIDER=ollama-incluster / OLLAMA_URL=http://ollama:11434 in the ConfigMap.
+# Needs a bigger node than `make cluster` gives: minikube start --memory=8192 --cpus=4.
+#   kubectl apply -k k8s/overlays/dev-ollama-incluster
+#   kubectl rollout status deployment/ollama -n rahbar --timeout=900s   # pull + load
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+components:
+  - ../../components/ollama-incluster
+
+images:
+  - name: rahbar-api
+    newName: rahbar-api
+    newTag: dev
+  - name: rahbar-indexer
+    newName: rahbar-indexer
+    newTag: dev
+  - name: rahbar-ui
+    newName: rahbar-ui
+    newTag: dev

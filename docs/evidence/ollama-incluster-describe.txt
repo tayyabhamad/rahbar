@@ -1,0 +1,20 @@
+    Startup:    exec [/bin/sh -c ollama show $LLM_MODEL >/dev/null] delay=0s timeout=8s period=10s successThreshold=1 failureThreshold=30
+    Environment:
+      HOME:                      /models
+      OLLAMA_MODELS:             /models/models
+      OLLAMA_HOST:               0.0.0.0:11434
+      OLLAMA_KEEP_ALIVE:         1h
+      OLLAMA_MAX_LOADED_MODELS:  2
+      OLLAMA_NUM_PARALLEL:       1
+      LLM_MODEL:                 <set to the key 'LLM_MODEL' of config map 'rahbar-config'>  Optional: false
+    Mounts:
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  2m3s  default-scheduler  Successfully assigned rahbar/ollama-84b8f749c6-28hgw to minikube
+  Normal  Pulled     2m2s  kubelet            spec.initContainers{pull-weights}: Container image "ollama/ollama:0.40.15" already present on machine and can be accessed by the pod
+  Normal  Created    2m2s  kubelet            spec.initContainers{pull-weights}: Container created
+  Normal  Started    2m2s  kubelet            spec.initContainers{pull-weights}: Container started
+  Normal  Pulled     10s   kubelet            spec.containers{ollama}: Container image "ollama/ollama:0.40.15" already present on machine and can be accessed by the pod
+  Normal  Created    10s   kubelet            spec.containers{ollama}: Container created
+  Normal  Started    10s   kubelet            spec.containers{ollama}: Container started

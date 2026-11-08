@@ -1,0 +1,178 @@
+# Ollama as a Deployment (bonus mode). One replica, Recreate (the weights PVC is RWO).
+#
+# Why the probes look like this: loading a 3B model takes minutes on a laptop CPU, and a
+# liveness probe during that time would kill the pod halfway through the load, forever.
+# So the startupProbe owns the first 5 minutes (30 x 10 s) and liveness only starts once
+# `ollama show $LLM_MODEL` has succeeded, which proves both that the server answers and
+# that the weights are present. Readiness is the plain HTTP root ("Ollama is running").
+#
+# Why the pull is an initContainer: `ollama pull` needs a running server, so the init
+# step starts one privately on 127.0.0.1, pulls LLM_MODEL (and EMBED_MODEL when the
+# embeddings also run here) onto the PVC, and exits. On a restart the pull finds the
+# layers on the PVC and finishes in seconds. The main container then only serves.
+#
+# Runs as uid 1000 with a read-only root filesystem: Ollama only needs OLLAMA_MODELS and
+# $HOME (for its key pair) writable, both on the PVC, plus /tmp.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: rahbar
+  labels:
+    app.kubernetes.io/name: ollama
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ollama
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ollama
+    spec:
+      serviceAccountName: ollama
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: pull-weights
+          image: ollama/ollama:0.40.15
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              ollama serve >/tmp/serve.log 2>&1 &
+              for i in $(seq 1 60); do ollama list >/dev/null 2>&1 && break; sleep 1; done
+              echo "pulling $LLM_MODEL"; ollama pull "$LLM_MODEL"
+              if [ "$EMBED_PROVIDER" = "ollama" ]; then echo "pulling $EMBED_MODEL"; ollama pull "$EMBED_MODEL"; fi
+              ollama list
+          env:
+            - name: HOME
+              value: /models
+            - name: OLLAMA_MODELS
+              value: /models/models
+            - name: OLLAMA_HOST
+              value: 127.0.0.1:11434
+            - name: LLM_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: rahbar-config
+                  key: LLM_MODEL
+            - name: EMBED_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: rahbar-config
+                  key: EMBED_MODEL
+            - name: EMBED_PROVIDER
+              valueFrom:
+                configMapKeyRef:
+                  name: rahbar-config
+                  key: EMBED_PROVIDER
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: models
+              mountPath: /models
+            - name: tmp
+              mountPath: /tmp
+      containers:
+        - name: ollama
+          image: ollama/ollama:0.40.15
+          imagePullPolicy: IfNotPresent
+          args: ["serve"]
+          ports:
+            - name: http
+              containerPort: 11434
+              protocol: TCP
+          env:
+            - name: HOME
+              value: /models
+            - name: OLLAMA_MODELS
+              value: /models/models
+            - name: OLLAMA_HOST
+              value: 0.0.0.0:11434
+            # Keep the chat model resident between questions; the default unloads it after
+            # 5 minutes idle and the next question pays the load again.
+            - name: OLLAMA_KEEP_ALIVE
+              value: "1h"
+            - name: OLLAMA_MAX_LOADED_MODELS
+              value: "2"
+            - name: OLLAMA_NUM_PARALLEL
+              value: "1"
+            - name: LLM_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: rahbar-config
+                  key: LLM_MODEL
+          startupProbe:
+            exec:
+              command: ["/bin/sh", "-c", "ollama show $LLM_MODEL >/dev/null"]
+            periodSeconds: 10
+            timeoutSeconds: 8
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          # llama3.2:3b (q4) is about 2 GB of weights plus the KV cache; nomic-embed-text
+          # adds 0.3 GB when embeddings run here. Scale down with the model (a 0.5B model
+          # runs in 1 Gi), see docs/evidence/ollama-incluster-*.txt.
+          resources:
+            requests:
+              cpu: "1"
+              memory: 3Gi
+            limits:
+              cpu: "4"
+              memory: 4Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: models
+              mountPath: /models
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: ollama-models
+        - name: tmp
+          emptyDir: {}
