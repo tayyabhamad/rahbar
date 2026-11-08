@@ -1,8 +1,7 @@
 # Engineering notes
 
 Answers to the seven questions in section 7 of the case study, each pointing at our own
-files. Line numbers were checked on 2026-11-08. Numbers that need a running cluster are
-marked `TODO(cluster)` with the command that produces them.
+files. Line numbers were checked on 2026-11-08. Cluster numbers come from the minikube deployment of 8 November 2026 (`docs/evidence/`).
 
 ## 1. Indexing in API startup: what breaks with 3 replicas and one Chroma volume?
 
@@ -129,9 +128,23 @@ question declined. The fixture is three short Markdown files, so this proves the
 and the superseded filter, not retrieval quality.
 
 **Real corpus** (`eval/golden.yaml`: 12 ordinary, 3 version, 4 exact, 3 abstain, 2
-injection): `TODO(cluster): the by_type block of eval/results.json after make eval
-against the minikube deployment with nomic-embed-text; copy the table into
-docs/PIPELINE.md ("Chunking") and the worst type here.`
+injection), shipped run on minikube with the `dev-hosted` overlay (`baai/bge-m3`,
+`google/gemini-3.1-flash-lite`, OCR on, 250/40; `eval/results.json`):
+
+| Type | recall@3 | recall@5 |
+| --- | ---: | ---: |
+| ordinary (12) | 0.792 | 0.875 |
+| version (3) | 1.000 | 1.000 |
+| exact (4) | 1.000 | 1.000 |
+| injection (2) | 1.000 | 1.000 |
+| all | 0.881 | 0.929 |
+
+With the dense embedder the worst type is **ordinary**, not exact: q12 (how many
+campuses) retrieves five annual-report chunks about individual campuses rather than the
+one chunk that lists them, and q07 (ChatGPT in assignments) finds the handbook's
+Generative AI policy but not the Student Handbook's Code of Conduct clause. With the
+lexical laptop embedder the ranking was the expected one: exact 1.0 (hybrid pass),
+ordinary 0.708, version 0.333 (the 2023 PDF had no text without OCR).
 
 **Where we expect it to be worst, and why.** Exact-term questions. An embedding model
 represents "clause 1.21" and "clause 1.12" with nearly the same vector: digits carry

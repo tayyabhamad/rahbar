@@ -1,13 +1,21 @@
 # Indexing and retrieval pipeline
 
-Every number below was measured, not guessed. Unless a row says otherwise it comes from a
-local run on 8 November 2026 with the **CI embedder** (`EMBED_MODEL=local-hash-v1`, a
-deterministic hashed bag-of-words, see `docs/ARCHITECTURE.md`), the **stub LLM**, OCR
-off (no tesseract on the laptop), Chroma 1.0.12 and Redis in Docker, and the 24-question
-golden set in `eval/golden.yaml`. The same scripts (`make index`, `make eval`) produce the
-cluster numbers with `nomic-embed-text` and Ollama; re-run them there and refresh
-`eval/baseline.json` with `--update-baseline`. Where the two embedders are expected to
-differ, the text says so.
+Every number below was measured, not guessed, with the 24-question golden set in
+`eval/golden.yaml`. Two setups appear, and each row says which:
+
+* **laptop**: the CI embedder (`EMBED_MODEL=local-hash-v1`, a deterministic hashed
+  bag-of-words, see `docs/ARCHITECTURE.md`) with the **stub LLM**, OCR off (no tesseract
+  on the laptop), Chroma 1.0.12 and Redis in Docker. Cheap, deterministic, and the
+  setting CI uses; it exposes every stage but measures lexical overlap, not meaning.
+* **cluster**: the `dev-hosted` overlay on minikube (Calico, 3 GB node): the full
+  pipeline with OCR, `baai/bge-m3` embeddings (1024 dimensions) and
+  `google/gemini-3.1-flash-lite` generation, both through OpenRouter with the key in
+  `rahbar-secret`. **This is the shipped configuration and the source of the committed
+  `eval/baseline.json` and `eval/results.json`** (8 November 2026).
+
+The Ollama path (`nomic-embed-text` + `llama3.2:3b`, the `dev` overlay) is wired the same
+way; re-run `make eval` there and refresh the baseline with `--update-baseline` if you
+switch to it.
 
 ## Extraction
 
@@ -146,13 +154,39 @@ term}` and its hits are merged in front of the semantic hits
 (`api/app/retrieval/chroma.py`). Version questions are worst because two of the three
 need the 2023 document, which has no text locally (see Extraction).
 
+**Shipped baseline (cluster: OCR on, bge-m3, gemini-3.1-flash-lite, 250/40, floor 0.45,
+`eval/baseline.json`):**
+
+| | recall@3 | recall@5 | citation validity | abstention |
+| --- | ---: | ---: | ---: | ---: |
+| all 24 questions | 0.881 | **0.929** | 1.000 | 1.000 (3 of 3) |
+| ordinary (12) | 0.792 | 0.875 | 1.000 | |
+| version (3) | 1.000 | 1.000 | 1.000 | |
+| exact (4) | 1.000 | 1.000 | 1.000 | |
+| injection (2) | 1.000 | 1.000 | 1.000 | |
+
+Mean 4.8 s per question. Two answerable questions were declined by the model
+(`answered_from_context: false`, counted as false abstentions in `results.json`): q15,
+which asks for the superseded 2023 wording and whose OCR'd chunk the model judged too
+garbled to quote, and q11, a faculty head-count from an annual-report table. Both are
+retrieval hits (recall 1.0); the honesty rule, not retrieval, held them back. The two
+ordinary misses (q07 ChatGPT policy at 0.5, q12 campuses at 0) are discussed in
+`docs/ENGINEERING-NOTES.md`, question 5. Against the lexical laptop numbers (recall@5
+0.714, version 0.333, exact 1.0) the dense embedder lifts ordinary and version
+questions; exact-term questions were already at 1.0 because the hybrid pass carries them.
+
 ## Embedding
 
-| | Cluster | CI and local runs |
-| --- | --- | --- |
-| Model | `nomic-embed-text` via Ollama `POST /api/embed` | `local-hash-v1` (hashed bag-of-words, no network) |
-| Vector dimension | 768 | 512 |
-| Where the pin lives | ConfigMap `rahbar-config`, key `EMBED_MODEL`, read by the api and the indexer (`k8s/base/configmap.yaml`) | the `ci` overlay patches the same key |
+| | Cluster, hosted (shipped) | Cluster, local Ollama | CI and laptop runs |
+| --- | --- | --- | --- |
+| Model | `baai/bge-m3` via OpenRouter `POST /embeddings` (`EMBED_PROVIDER=hosted`) | `nomic-embed-text` via Ollama `POST /api/embed` | `local-hash-v1` (hashed bag-of-words, no network) |
+| Vector dimension | 1024 | 768 | 512 |
+| Where the pin lives | ConfigMap `rahbar-config`, keys `EMBED_MODEL` and `EMBED_PROVIDER`, read by the api and the indexer; the `dev-hosted` overlay sets both (`k8s/overlays/dev-hosted/configmap-patch.yaml`) | base `k8s/base/configmap.yaml` | the `ci` overlay patches the same key |
+
+Switching the pin was exercised on the cluster: the re-index Job logged `embedding pin
+changed; recreating the collection` (`local-hash-v1`/512 to `baai/bge-m3`/1024), the api
+pods restarted onto the new value and `/readyz` reported `embedding_pin: ok: baai/bge-m3`
+(`docs/evidence/indexer-job-hosted-log.txt`).
 
 The indexer writes `embed_model` and `dimension` into the collection metadata
 (`indexer/pipeline/store.py`, `collection_metadata`). The api compares them with its own
@@ -205,6 +239,25 @@ ConfigMap ships `RELEVANCE_FLOOR=0.45` for `nomic-embed-text`, whose cosine scor
 higher and separate better; repeat this table on the cluster (`make eval` once per floor)
 and put the chosen value in the ConfigMap with the same one-line justification.
 
+**With the dense embedder (cluster, bge-m3, real model), from the shipped run's
+per-question best scores:** must-abstain questions scored 0.492 (q22 hostel rent), 0.535
+(q20 parking) and 0.622 (q21 laptop loan); the weakest answerable ones 0.467 (q16, clause
+1.21), 0.535 (q23) and 0.561 (q10). What each floor would do to this run:
+
+| `RELEVANCE_FLOOR` | Must-abstain caught by the floor | False abstentions caused by the floor | Verdict |
+| ---: | ---: | ---: | --- |
+| **0.45** (shipped) | 0 of 3 | 0 | the model declined all three itself: abstention 100 %, nothing lost |
+| 0.50 | 1 of 3 (q22) | 1 (q16, an exact-term question at 0.467) | ruled out |
+| 0.55 | 2 of 3 | 2 (q16, q23) | ruled out |
+| 0.65 | 3 of 3 | 12 | ruled out |
+
+So the floor cannot do the abstaining on its own with this embedder either: the absent
+topics are semantically close to real university text (fees, facilities). The floor's job
+is to stop obvious junk from reaching the model; honest refusal comes from the
+`answered_from_context: false` contract, which held on all three (`eval/results.json`).
+0.45 is kept because every higher value starts paying in exact-term recall before it buys
+a single floor-caught abstention.
+
 ## Semantic cache
 
 Redis, ADR 0003. A hit is cosine similarity between question vectors at or above
@@ -227,7 +280,29 @@ questions. Pairwise similarity between the 24 golden questions with the CI embed
 | 0.92 (shipped) | zero false hits; only near-identical wording hits |
 
 0.40 is the lowest safe value for the lexical embedder, which is what the `ci` overlay's
-0.95 and the local runs stay well above. The ConfigMap ships 0.92 for `nomic-embed-text`,
+0.95 and the local runs stay well above.
+
+**With the dense embedder** (the 24 golden questions embedded with `baai/bge-m3` inside an
+api pod on the cluster, same code path as the cache):
+
+| Pair | Similarity | Same answer? |
+| --- | ---: | --- |
+| q13 "current minimum attendance" / q15 "previous 2023 version of the rules" | 0.780 | no: a false hit |
+| q17 "one-time admission fee" / q20 "parking permit cost" | 0.693 | no |
+| q01 "attendance in lectures and labs" / q13 "current minimum attendance" | 0.692 | partly |
+| paraphrase: "What CGPA puts a student on academic warning?" / "Which CGPA places a student on academic warning?" | 0.987 | yes |
+| paraphrase: "How much is the admission fee?" / "What is the admission fee amount?" | 0.987 | yes |
+| paraphrase: "What is the attendance requirement?" / "How much attendance is required?" | 0.937 | yes |
+
+| `CACHE_THRESHOLD` | Result with bge-m3 |
+| ---: | --- |
+| 0.78 | false hit: a question about the 2023 rules would be served the 2026 answer |
+| 0.80 | lowest value with zero false hits; all three paraphrases hit |
+| **0.92** (shipped) | zero false hits, all three paraphrases still hit, 0.14 of margin above the worst pair |
+
+The lecture's rule picks 0.80; with only 24 test questions a 0.02 margin is one unseen
+question away from a cached wrong answer, so 0.92 ships and the margin is the
+justification. The ConfigMap ships 0.92 for `nomic-embed-text`,
 where unrelated questions typically score 0.6 to 0.8 and paraphrases above 0.9; measure the
 same three rows on the cluster before trusting it. Entries are never written for
 follow-ups, abstentions, fallbacks or answers without a valid citation, and a re-index
