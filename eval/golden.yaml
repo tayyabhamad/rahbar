@@ -7,12 +7,12 @@
 # 2026 handbook with undergraduate-academic-rules-aug-2023.pdf (superseded).
 #
 # `section` values are the exact labels the chunker produced in a local dry run of
-# indexer/pipeline (extract -> clean -> chunk, 400/50, OCR off) on 2026-11-08, after the
-# two-column extraction fix. In the 2026 handbook clauses 1.21-1.25 sit under "Attendance
-# Requirements", 2.x under "Grade Points", 4.2x under "Freezing of Semester" and the 8.x
-# dishonesty clauses under "7 Graduation Awards". A bare clause number also matches by the
-# prefix rule (docs/ARCHITECTURE.md). The 2023 rules PDF is image-only: without OCR it
-# yields one cover chunk, so q15 matches on source alone.
+# indexer/pipeline (extract -> clean -> chunk, 400/50, OCR off) on 2026-11-08 after switching
+# to pdfminer layout extraction. Clause numbers (1.21, 4.25, 5.4 ...) are inside the chunk
+# text; the label is the heading the chunk sits under, so a bare clause number also matches
+# by the prefix rule (docs/ARCHITECTURE.md) only where the chunker made it a heading. The
+# 2023 rules PDF is image-only: without OCR it yields one cover chunk, so q15 matches on
+# source alone.
 
 questions:
   # ---------------------------------------------------------------- ordinary
@@ -31,7 +31,7 @@ questions:
       - {source: academic-rules-handbook-jun-2026.pdf, section: "5 Academic Assessment"}
       - {source: grading-page.html, section: "Warning/Probation"}
     expect: "2.0"
-    note: Clause 5.4 says 2.00 for all undergraduate programs; the grading page table says 2.0 for BBA/BS.
+    note: Clause 5.4 says 2.00 for all undergraduate programs; the grading page table says 2.0 for BBA/BS. The chunker label "Academic Warning/Probation" exists but covers the table of contents and clauses 1.7-1.20 (pages 6-9); clauses 5.4-5.7 sit under 5 Academic Assessment.
 
   - id: q03
     type: ordinary

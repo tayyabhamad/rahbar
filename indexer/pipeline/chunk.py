@@ -80,8 +80,10 @@ def _heading_of(line: str) -> str | None:
         return f"{m.group('num')} {m.group('title').strip()}"
     if _CAPS_HEADING.match(line):
         return line.title() if line.isupper() else line
+    # A Title-Case line that ends in a bare number is a table-of-contents entry
+    # ("Academic Warning/Probation 18"), not the heading itself.
     if _TITLE_LINE.match(line) and _titleish(line) and len(line) <= 48 \
-            and not line.endswith((".", ",", ";", ":")):
+            and not line.endswith((".", ",", ";", ":")) and not re.search(r"\s\d{1,3}$", line):
         return line
     return None
 

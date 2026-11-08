@@ -28,14 +28,21 @@ Locally OCR is unavailable, so those pages are logged as
 indexer image installs `tesseract-ocr` and `poppler-utils` (`indexer/Dockerfile`), so on
 the cluster both scanned documents are indexed.
 
-**Two-column pages.** The 2026 handbook is two-column. Default `extract_text` interleaves
-the columns line by line, so clause 1.9 and clause 1.15 end up on one line and every
-heading dissolves: before the fix the whole first chapter of the handbook was one section
-called "Preamble". `extract.py` now finds a vertical gutter that almost no word crosses
-(`_column_gutter`), extracts full-width lines (running header, titles) first and then each
-column separately (`_page_text`). After the fix the handbook has the sections a reader
-expects ("Attendance Requirements", "Grade Points", "3 Admission Policy", "Freezing of
-Semester", "5 Academic Assessment", ...).
+**Two-column pages.** The 2026 handbook and the Student Handbook mix full-width
+paragraphs with two-column blocks on the same page. pdfplumber's plain `extract_text`
+interleaves the columns line by line, so clause 1.9 and clause 1.15 ended up on one line
+and every heading dissolved: before the fix the whole first chapter of the handbook was
+one section called "Preamble". A first attempt split each page at a vertical gutter
+that no word crossed; it caught only 5 of the 58 pages because the column widths change
+from block to block. The shipped extractor takes page text from pdfminer's layout
+analysis instead (`extract.py`, `_miner_pages`): characters are grouped into lines,
+lines into text boxes, and boxes are ordered in reading order (`boxes_flow=0.5`), so a
+two-column block comes out column by column while a full-width paragraph stays whole.
+pdfplumber still provides the tables and the "does this page have a text layer" check.
+After the switch the handbook has the sections a reader expects ("Attendance
+Requirements", "Grade Points", "3 Admission Policy", "Academic Warning/Probation",
+"Freezing of Semester", "5 Academic Assessment", ...) and the Student Handbook its
+chapters ("V - Examination Rules", "Code Of Conduct", "Academic Dishonesty").
 
 **A mangled table, before and after.** Handbook page 12, the grade-point table is two
 small tables side by side. Plain text extraction reads across both:
@@ -75,7 +82,12 @@ Rules, in order (`indexer/pipeline/clean.py`):
    "... | 8" one pattern. This needed the two-column fix first: a header cut in half at the
    gutter has a different signature on every page and survived as a fake heading
    ("National University Of Computer And").
-2. **Bare page numbers** ("7", "- 7 -", "Page 7 of 53") on a line of their own.
+2. **Bare page numbers** ("7", "- 7 -", "Page 7 of 53") on a line of their own. A clause
+   number alone on a line ("5.1", which pdfminer emits as its own box) is re-attached to
+   the line that follows *before* rule 1 runs, and a signature with no letters is never
+   counted as a running header: without both, "5.1", "5.2" and "1.9" shared the
+   digit-blanked signature `#.#`, appeared at the edge of most pages, and were stripped
+   as a "header", so every clause lost its number.
 3. **Line-end hyphenation**: "regis-\ntration" becomes "registration", only when the next
    line starts with a lowercase letter.
 4. **Soft line wraps** inside a paragraph are joined, unless the previous line ends a

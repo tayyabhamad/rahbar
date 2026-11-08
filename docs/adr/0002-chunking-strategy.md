@@ -47,16 +47,9 @@ that order, never crossing a section boundary (`chunk.py:3-5`, `:157-218`):
   tokenizer download. Shipped values: `CHUNK_SIZE=250`, `CHUNK_OVERLAP=40`
   (`configmap.yaml:31-32`), chosen from the three measured configurations in
   `docs/PIPELINE.md`; the code defaults stay at the starter's 400/50.
-* **Upstream support**: two-column pages are detected by a vertical gutter that almost
-  no word crosses and extracted column by column, left before right, with page-wide
-  lines (running titles) pulled out first (`indexer/pipeline/extract.py:94-148`);
-  tables are re-rendered as pipe rows under a `[table]` marker (`extract.py:57-66`,
-  `:163-171`); the Clean stage removes repeating headers, footers and page numbers,
-  re-joins hyphenated words and soft wraps, and deliberately keeps clause numbers, bullets
-  and table rows (`indexer/pipeline/clean.py:5-24`).
-
-Chunk ids are `<source-slug>-<ordinal:04d>` (`chunk.py:209`), and every chunk carries
-`source`, `section`, `page`, `doc_version`, `superseded` (`:208-216`).
+* **Upstream support**: page text comes from pdfminer's layout analysis (text boxes in
+  reading order), so two-column blocks reach the chunker column by column; lone clause
+  numbers are re-attached to their sentence in the Clean stage.
 
 ## Options considered
 * **Fixed-size token windows** (e.g. 400 tokens, stride 350). Simplest and what most

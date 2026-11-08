@@ -1,0 +1,13 @@
+# section 4.2: re-index is one command, no redeploy, no downtime  (2026-11-08T08:13Z)
+# (indexer image rebuilt with the pdfminer extractor and loaded; same tag, IfNotPresent)
+$ kubectl exec deploy/api -n rahbar -- /readyz   # before: generation of the running index
+{"status":"ready","failed":null,"checks":{"chroma":"reachable","collection":{"name":"rahbar","count":690},"embedding_pin":"ok: local-hash-v1","redis":"reachable"}}
+$ kubectl create job --from=cronjob/reindex manual-reindex-1313 -n rahbar
+job.batch/manual-reindex-1313 created
+$ kubectl get endpoints api -n rahbar   # during the re-index the three api pods stay in the Service
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME   ENDPOINTS                                                  AGE
+api    10.244.120.87:8000,10.244.120.88:8000,10.244.120.89:8000   12m
+$ curl POST /api/ask through the Ingress while the Job runs
+HTTP 200 in 0.011929s
+$ kubectl wait --for=condition=complete job/manual-reindex-1313 -n rahbar --timeout=1500s
