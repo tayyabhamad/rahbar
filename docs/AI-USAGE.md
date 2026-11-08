@@ -6,7 +6,7 @@ A specific disclosure carries no penalty, so this file is specific.
 
 | Tool | Version / model | How it was used |
 | --- | --- | --- |
-| Claude Code (Anthropic's CLI agent) | model Claude Fable 5.1 | Pair-programming sessions in the repository on 2026-11-08, driven by Tayyab Hamad and `<partner name>`. It read the starter kit, the case study summary and our design notes, and wrote or shaped the code and documents listed below. We reviewed, ran and edited the output; where we changed it, the section at the end says what and why. |
+| Claude Code (Anthropic's CLI agent) | model Claude Fable 5.1 | Pair-programming sessions in the repository on 2026-11-08, driven by Tayyab Hamad and Shayed Zain Ali. It read the starter kit, the case study summary and our design notes, and wrote or shaped the code and documents listed below. We reviewed, ran and edited the output; where we changed it, the section at the end says what and why. |
 | Ollama (`llama3.2:3b`, `nomic-embed-text`) | runtime models | Not an authoring tool: these are the models the system itself runs. Listed so there is no confusion about which AI did what. |
 
 No other AI tools (ChatGPT, Copilot, Gemini, Cursor) were used.
@@ -55,4 +55,4 @@ design decisions in the ADRs are ours; Claude's role was to write the first vers
 quickly and argue with us about it. If a marker asks either of us to walk through
 `api/app/services/answer.py` or `indexer/pipeline/chunk.py` without notes, we can.
 
-Signed: Tayyab Hamad, `<partner name>` · 2026-11-08
+Signed: Tayyab Hamad, Shayed Zain Ali (24i-3061) · 2026-11-08
