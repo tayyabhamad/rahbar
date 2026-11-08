@@ -168,9 +168,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: imranismail/setup-kustomize@v2
-        with:
-          kustomize-version: "5.6.0"
+      # kustomize is preinstalled on the runner image (no release-asset download).
+      - name: Tool versions
+        run: kustomize version && kubectl version --client && kind version
 
       # Same kind layout as ci.yml: 80/443 published on the runner, node labelled
       # ingress-ready=true for the ingress-nginx kind provider manifest.
@@ -196,12 +196,11 @@ jobs:
                   protocol: TCP
           EOF
 
-      - uses: helm/kind-action@v1
-        with:
-          cluster_name: ${{ env.KIND_CLUSTER }}
-          config: kind-config.yaml
-          node_image: kindest/node:v1.32.0
-          wait: 120s
+      - name: Create the kind cluster
+        run: |
+          set -euo pipefail
+          kind create cluster --name "$KIND_CLUSTER" --config kind-config.yaml \
+            --image kindest/node:v1.32.0 --wait 120s
 
       - name: Install ingress-nginx for kind
         run: |
