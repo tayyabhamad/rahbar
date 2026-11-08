@@ -12,7 +12,8 @@ from ...schemas import Answer, Citation, Passage
 class StubProvider:
     name = "stub"
 
-    def generate(self, question: str, passages: list[Passage]) -> Answer:
+    def generate(self, question: str, passages: list[Passage],
+                 older_version_requested: bool = False) -> Answer:
         if not passages:
             return Answer(
                 reasoning="stub: nothing was retrieved",

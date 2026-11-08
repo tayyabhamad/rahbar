@@ -19,7 +19,13 @@ venv/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
 
 # Local scratch
 *.log
 .DS_Store
+
+# Local scratch overlays (never committed)
+k8s/overlays/_scratch-*/

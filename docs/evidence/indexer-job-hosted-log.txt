@@ -1,0 +1,54 @@
+{"ts": "2026-11-08T09:00:34Z", "logger": "rahbar.indexer", "msg": "indexer starting", "dummy": false, "embed_model": "baai/bge-m3", "collection": "rahbar", "chroma": "chroma:8000", "pod": "hosted-reindex-1359-72qpb"}
+{"ts": "2026-11-08T09:03:06Z", "logger": "rahbar.indexer.extract", "msg": "extracted pdf", "source": "undergraduate-academic-rules-aug-2023.pdf", "pages": 26, "ocr_pages": 24, "lost_pages": 0, "layout_pages": 26}
+{"ts": "2026-11-08T09:03:06Z", "logger": "rahbar.indexer", "msg": "chunked", "source": "undergraduate-academic-rules-aug-2023.pdf", "pages": 26, "ocr_pages": 24, "chunks": 60, "original_tokens": 6311, "stored_tokens": 6494, "amplification": 1.029, "doc_version": "2023-08", "superseded": true}
+{"ts": "2026-11-08T09:03:23Z", "logger": "rahbar.indexer.extract", "msg": "extracted pdf", "source": "academic-rules-handbook-jun-2026.pdf", "pages": 58, "ocr_pages": 5, "lost_pages": 0, "layout_pages": 58}
+{"ts": "2026-11-08T09:03:23Z", "logger": "rahbar.indexer", "msg": "chunked", "source": "academic-rules-handbook-jun-2026.pdf", "pages": 58, "ocr_pages": 5, "chunks": 111, "original_tokens": 17557, "stored_tokens": 21131, "amplification": 1.204, "doc_version": "2026-06", "superseded": false}
+{"ts": "2026-11-08T09:03:25Z", "logger": "rahbar.indexer.extract", "msg": "extracted pdf", "source": "prospectus-2026-academic-rules-and-regulations.pdf", "pages": 5, "ocr_pages": 0, "lost_pages": 0, "layout_pages": 5}
+{"ts": "2026-11-08T09:03:25Z", "logger": "rahbar.indexer", "msg": "chunked", "source": "prospectus-2026-academic-rules-and-regulations.pdf", "pages": 5, "ocr_pages": 0, "chunks": 34, "original_tokens": 5746, "stored_tokens": 7104, "amplification": 1.236, "doc_version": "2026", "superseded": false}
+{"ts": "2026-11-08T09:03:40Z", "logger": "rahbar.indexer.extract", "msg": "extracted pdf", "source": "student-handbook-jun-2026.pdf", "pages": 64, "ocr_pages": 4, "lost_pages": 0, "layout_pages": 64}
+{"ts": "2026-11-08T09:03:40Z", "logger": "rahbar.indexer", "msg": "chunked", "source": "student-handbook-jun-2026.pdf", "pages": 64, "ocr_pages": 4, "chunks": 157, "original_tokens": 27193, "stored_tokens": 32865, "amplification": 1.209, "doc_version": "2026-06", "superseded": false}
+{"ts": "2026-11-08T09:03:47Z", "logger": "rahbar.indexer.extract", "msg": "extracted pdf", "source": "annual-report-2019-20.pdf", "pages": 33, "ocr_pages": 0, "lost_pages": 0, "layout_pages": 33}
+{"ts": "2026-11-08T09:03:47Z", "logger": "rahbar.indexer", "msg": "chunked", "source": "annual-report-2019-20.pdf", "pages": 33, "ocr_pages": 0, "chunks": 66, "original_tokens": 10077, "stored_tokens": 11715, "amplification": 1.163, "doc_version": "2019-20", "superseded": false}
+{"ts": "2026-11-08T09:04:02Z", "logger": "rahbar.indexer.extract", "msg": "extracted pdf", "source": "annual-report-2023-24.pdf", "pages": 85, "ocr_pages": 0, "lost_pages": 0, "layout_pages": 85}
+{"ts": "2026-11-08T09:04:03Z", "logger": "rahbar.indexer", "msg": "chunked", "source": "annual-report-2023-24.pdf", "pages": 85, "ocr_pages": 0, "chunks": 232, "original_tokens": 40814, "stored_tokens": 48604, "amplification": 1.191, "doc_version": "2023-24", "superseded": false}
+{"ts": "2026-11-08T09:04:03Z", "logger": "rahbar.indexer.extract", "msg": "extracted html", "source": "fee-structure-page.html", "chars": 3745}
+{"ts": "2026-11-08T09:04:03Z", "logger": "rahbar.indexer", "msg": "chunked", "source": "fee-structure-page.html", "pages": 1, "ocr_pages": 0, "chunks": 8, "original_tokens": 817, "stored_tokens": 794, "amplification": 0.972, "doc_version": "2026-27", "superseded": false}
+{"ts": "2026-11-08T09:04:03Z", "logger": "rahbar.indexer.extract", "msg": "extracted html", "source": "grading-page.html", "chars": 4898}
+{"ts": "2026-11-08T09:04:03Z", "logger": "rahbar.indexer", "msg": "chunked", "source": "grading-page.html", "pages": 1, "ocr_pages": 0, "chunks": 9, "original_tokens": 1121, "stored_tokens": 1192, "amplification": 1.063, "doc_version": "2026", "superseded": false}
+{"ts": "2026-11-08T09:04:36Z", "logger": "rahbar.indexer.extract", "msg": "extracted pdf", "source": "faculty-entrepreneurship-and-technical-start-ups-policy.pdf", "pages": 8, "ocr_pages": 8, "lost_pages": 0, "layout_pages": 8}
+{"ts": "2026-11-08T09:04:36Z", "logger": "rahbar.indexer", "msg": "chunked", "source": "faculty-entrepreneurship-and-technical-start-ups-policy.pdf", "pages": 8, "ocr_pages": 8, "chunks": 26, "original_tokens": 2260, "stored_tokens": 2482, "amplification": 1.098, "doc_version": "2022-05", "superseded": false}
+{"ts": "2026-11-08T09:04:36Z", "logger": "rahbar.indexer", "msg": "corpus chunked", "documents": 9, "chunks": 703, "chunk_size": 250, "chunk_overlap": 40, "original_tokens": 111896, "stored_tokens": 132381, "amplification": 1.183}
+{"ts": "2026-11-08T09:04:41Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 32, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:04:44Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 64, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:04:48Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 96, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:04:52Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 128, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:04:55Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 160, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:04:58Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 192, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:05:00Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 224, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:05:03Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 256, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:05:04Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 288, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:05:07Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 320, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:05:09Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 352, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:05:11Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 384, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:05:13Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 416, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:05:15Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 448, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:05:17Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 480, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:05:19Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 512, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:05:20Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 544, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:05:22Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 576, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:05:24Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 608, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:05:25Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 640, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:05:27Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 672, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:05:29Z", "logger": "rahbar.indexer.embed", "msg": "embedded", "done": 703, "total": 703, "model": "baai/bge-m3", "provider": "hosted"}
+{"ts": "2026-11-08T09:05:29Z", "logger": "rahbar.indexer.embed", "msg": "embedding finished", "vectors": 703, "dimension": 1024, "seconds": 52.3}
+{"ts": "2026-11-08T09:05:29Z", "logger": "rahbar.indexer.store", "msg": "embedding pin changed; recreating the collection", "old_model": "local-hash-v1", "old_dimension": 512, "new_model": "baai/bge-m3", "new_dimension": 1024}
+{"ts": "2026-11-08T09:05:29Z", "logger": "rahbar.indexer.store", "msg": "stored", "done": 100, "total": 703}
+{"ts": "2026-11-08T09:05:30Z", "logger": "rahbar.indexer.store", "msg": "stored", "done": 200, "total": 703}
+{"ts": "2026-11-08T09:05:30Z", "logger": "rahbar.indexer.store", "msg": "stored", "done": 300, "total": 703}
+{"ts": "2026-11-08T09:05:30Z", "logger": "rahbar.indexer.store", "msg": "stored", "done": 400, "total": 703}
+{"ts": "2026-11-08T09:05:30Z", "logger": "rahbar.indexer.store", "msg": "stored", "done": 500, "total": 703}
+{"ts": "2026-11-08T09:05:31Z", "logger": "rahbar.indexer.store", "msg": "stored", "done": 600, "total": 703}
+{"ts": "2026-11-08T09:05:31Z", "logger": "rahbar.indexer.store", "msg": "stored", "done": 700, "total": 703}
+{"ts": "2026-11-08T09:05:31Z", "logger": "rahbar.indexer.store", "msg": "stored", "done": 703, "total": 703}
+{"ts": "2026-11-08T09:05:31Z", "logger": "rahbar.indexer.store", "msg": "index written", "collection": "rahbar", "chunks": 703, "embed_model": "baai/bge-m3", "dimension": 1024, "index_generation": "20261108T090529Z"}
+{"ts": "2026-11-08T09:05:31Z", "logger": "rahbar.indexer", "msg": "indexer finished", "chunks": 703, "seconds": 297.0}

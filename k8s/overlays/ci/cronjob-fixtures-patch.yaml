@@ -1,0 +1,20 @@
+# JSON6902 patch for CronJob/reindex: the same three changes as job-fixtures-patch.yaml,
+# one level deeper (spec.jobTemplate.spec.template), so the two templates stay identical.
+- op: remove
+  path: /spec/jobTemplate/spec/template/spec/initContainers
+- op: replace
+  path: /spec/jobTemplate/spec/template/spec/volumes
+  value:
+    - name: corpus
+      configMap:
+        name: rahbar-fixtures
+    - name: tmp
+      emptyDir: {}
+- op: replace
+  path: /spec/jobTemplate/spec/template/spec/containers/0/volumeMounts
+  value:
+    - name: corpus
+      mountPath: /corpus/raw
+      readOnly: true
+    - name: tmp
+      mountPath: /tmp

@@ -1,0 +1,10 @@
+# Everything RAHBAR owns lives here; nothing is ever applied to `default`.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rahbar
+  labels:
+    app.kubernetes.io/name: rahbar
+    # Baseline admission as a second net under the per-pod securityContexts below.
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/warn: restricted

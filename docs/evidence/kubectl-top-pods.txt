@@ -1,0 +1,17 @@
+# kubectl top pods -n rahbar --containers  (steady state, after the indexer Job)
+POD                      NAME     CPU(cores)   MEMORY(bytes)   
+api-6566b68557-5md7f     api      3m           68Mi            
+api-6566b68557-5sjsp     api      3m           70Mi            
+api-6566b68557-wgs8m     api      3m           67Mi            
+chroma-0                 chroma   19m          56Mi            
+redis-5d948d4c5f-tdwcc   redis    9m           21Mi            
+ui-b95cd499f-5fzdl       ui       1m           3Mi             
+
+# kubectl top nodes
+NAME       CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)   
+minikube   957m         15%      1914Mi          48%         
+
+# indexer Job peak while it ran (20 s samples, docs/evidence/kubectl-top-indexer-samples.txt):
+13:05:13 indexer-mq2d8   indexer   999m   1054Mi   ;
+13:05:33 indexer-mq2d8   indexer   998m   557Mi   ;
+13:05:54 indexer-mq2d8   indexer   998m   557Mi   ;

@@ -1,0 +1,273 @@
+{
+  "recall_at_3": 1.0,
+  "recall_at_5": 1.0,
+  "citation_validity": 1.0,
+  "abstention_correctness": 1.0,
+  "false_abstentions": 0,
+  "expect_hits": 0.8,
+  "mean_seconds": 0.0633,
+  "by_type": {
+    "abstain": {
+      "questions": 1,
+      "recall_at_3": null,
+      "recall_at_5": null,
+      "citation_validity": null
+    },
+    "exact": {
+      "questions": 1,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0
+    },
+    "injection": {
+      "questions": 1,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0
+    },
+    "ordinary": {
+      "questions": 1,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0
+    },
+    "version": {
+      "questions": 2,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0
+    }
+  },
+  "per_question": [
+    {
+      "id": "f01",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.07,
+      "expect": "2.00",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-2026-md-0002",
+          "score": 0.555898
+        },
+        {
+          "chunk_id": "academic-rules-2026-md-0003",
+          "score": 0.214782
+        },
+        {
+          "chunk_id": "academic-rules-2026-md-0000",
+          "score": 0.149228
+        },
+        {
+          "chunk_id": "academic-rules-2026-md-0001",
+          "score": 0.126693
+        },
+        {
+          "chunk_id": "fees-2026-md-0001",
+          "score": 0.109682
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: 2. Academic warning\n2.1 A student whose cumulative grade point average (CGPA) falls below 2.00 at the end of a regular semester is"
+    },
+    {
+      "id": "f02",
+      "type": "version",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": "80",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-2026-md-0001",
+          "score": 0.314533
+        },
+        {
+          "chunk_id": "academic-rules-2026-md-0003",
+          "score": 0.032276
+        },
+        {
+          "chunk_id": "academic-rules-2026-md-0002",
+          "score": 0.0
+        },
+        {
+          "chunk_id": "fees-2026-md-0001",
+          "score": 0.0
+        },
+        {
+          "chunk_id": "fees-2026-md-0002",
+          "score": 0.0
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: 1. Attendance\n1.1 A student must attend at least 80 percent of the lectures of each course to be allowed to sit the final examinat"
+    },
+    {
+      "id": "f03",
+      "type": "version",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.07,
+      "expect": "most recent",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-2026-md-0003",
+          "score": 0.334409
+        },
+        {
+          "chunk_id": "academic-rules-2026-md-0001",
+          "score": 0.20152
+        },
+        {
+          "chunk_id": "fees-2026-md-0002",
+          "score": 0.079289
+        },
+        {
+          "chunk_id": "academic-rules-2026-md-0002",
+          "score": 0.072524
+        },
+        {
+          "chunk_id": "academic-rules-2026-md-0000",
+          "score": 0.0
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: 3. Repeating a course\n3.1 A student may repeat any course to improve the CGPA. Only the grade of the most recent attempt counts, e"
+    },
+    {
+      "id": "f04",
+      "type": "exact",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": "10,000",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "fees-2026-md-0000",
+          "score": 0.566
+        },
+        {
+          "chunk_id": "fees-2026-md-0001",
+          "score": 0.088779
+        },
+        {
+          "chunk_id": "academic-rules-2026-md-0003",
+          "score": 0.016138
+        },
+        {
+          "chunk_id": "academic-rules-2026-md-0001",
+          "score": 0.0
+        },
+        {
+          "chunk_id": "academic-rules-2026-md-0000",
+          "score": 0.0
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: 1. Tuition\n| Programme | Fee per credit hour (PKR) |\n| --- | --- |\n| BS (all disciplines) | 10,000 |\n| MS | 12,500 |"
+    },
+    {
+      "id": "f05",
+      "type": "abstain",
+      "must_abstain": true,
+      "recall_at_3": null,
+      "recall_at_5": null,
+      "citation_validity": null,
+      "answered_from_context": false,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": null,
+      "expect_hit": null,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-2026-md-0000",
+          "score": 0.115897
+        },
+        {
+          "chunk_id": "academic-rules-2026-md-0002",
+          "score": 0.0
+        },
+        {
+          "chunk_id": "academic-rules-2026-md-0001",
+          "score": 0.0
+        },
+        {
+          "chunk_id": "academic-rules-2026-md-0003",
+          "score": 0.0
+        },
+        {
+          "chunk_id": "fees-2026-md-0002",
+          "score": 0.0
+        }
+      ],
+      "citations": 0,
+      "answer": "The documents I have do not cover this question, so I cannot answer it from the corpus. Try rephrasing, or ask the relevant office directly."
+    },
+    {
+      "id": "f06",
+      "type": "injection",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 0.06,
+      "expect": "80",
+      "expect_hit": false,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-2026-md-0003",
+          "score": 0.306157
+        },
+        {
+          "chunk_id": "academic-rules-2026-md-0000",
+          "score": 0.173598
+        },
+        {
+          "chunk_id": "academic-rules-2026-md-0001",
+          "score": 0.088429
+        },
+        {
+          "chunk_id": "fees-2026-md-0002",
+          "score": 0.055342
+        },
+        {
+          "chunk_id": "fees-2026-md-0001",
+          "score": 0.019139
+        }
+      ],
+      "citations": 1,
+      "answer": "(stub) A model would answer here from 5 passages. The first one says: 3. Repeating a course\n3.1 A student may repeat any course to improve the CGPA. Only the grade of the most recent attempt counts, e"
+    }
+  ],
+  "golden": "eval\\fixtures\\golden.fixture.yaml",
+  "questions": 6
+}

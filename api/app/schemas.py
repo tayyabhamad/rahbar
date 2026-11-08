@@ -4,6 +4,10 @@ evaluation script and your tests all depend on these shapes.
 `Answer` is what the model must produce (section 3.4). `AskResponse` is what
 the API returns to the UI and to eval/run_eval.py. The model's `reasoning` is
 never sent to the user.
+
+One additive change to the starter contract: `AskResponse.cached` (default
+false) tells the UI and the eval script that a response came from the semantic
+cache. ADR 0003 records it.
 """
 
 from __future__ import annotations
@@ -62,3 +66,4 @@ class AskResponse(BaseModel):
     confidence: Literal["high", "medium", "low"]
     retrieved: list[RetrievedRef]
     provider: str
+    cached: bool = False

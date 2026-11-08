@@ -1,0 +1,11 @@
+# Embedding-pin guardrail (section 4.4), local run 2026-11-08
+# Collection indexed with EMBED_MODEL=local-hash-v1; API started with EMBED_MODEL=nomic-embed-text.
+
+$ curl -s -w " HTTP %{http_code}" http://127.0.0.1:8000/readyz
+{"status":"not ready","failed":"embedding_pin","checks":{"chroma":"reachable","collection":{"name":"rahbar","count":11},"embedding_pin":"collection was indexed with EMBED_MODEL='local-hash-v1' but this API is configured with EMBED_MODEL='nomic-embed-text'","redis":"reachable"}} HTTP 503
+
+$ curl -s -w " HTTP %{http_code}" http://127.0.0.1:8000/healthz
+{"status":"alive"} HTTP 200
+
+# API log (JSON to stdout):
+{"ts": "2026-11-07T20:03:40Z", "level": "ERROR", "logger": "rahbar.readiness", "msg": "embedding pin mismatch", "request_id": "-", "collection_embed_model": "local-hash-v1", "api_embed_model": "nomic-embed-text", "collection_dimension": 512, "api_dimension": 768}

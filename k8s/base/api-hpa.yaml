@@ -1,0 +1,27 @@
+# CPU is the signal because the api's own work per request (embedding call, retrieval,
+# JSON parsing) is CPU-bound in-process; time spent waiting on the LLM is not CPU and
+# does not scale the api (see docs/ENGINEERING-NOTES.md, HPA question). Needs metrics-server.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api
+  labels:
+    app.kubernetes.io/name: api
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api
+  minReplicas: 3
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleDown:
+      # Do not flap after a burst of questions: wait 5 min before removing pods.
+      stabilizationWindowSeconds: 300

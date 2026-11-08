@@ -1,0 +1,112 @@
+# Chroma is a StatefulSet, not a Deployment: one stable identity (chroma-0) and a PVC from
+# volumeClaimTemplates that follows it, so a rescheduled pod reattaches the same HNSW
+# segments and SQLite file and no rolling update ever runs two writers against one volume
+# (docs/ARCHITECTURE.md, "Why Chroma is a StatefulSet").
+#
+# Resource numbers are starting points; revisit with `kubectl top pods -n rahbar` after the
+# real corpus is indexed (docs/evidence).
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: chroma
+  labels:
+    app.kubernetes.io/name: chroma
+spec:
+  serviceName: chroma
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: chroma
+  # With one replica this guarantees the old pod is gone before the new one mounts /data.
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: chroma
+    spec:
+      serviceAccountName: chroma
+      automountServiceAccountToken: false
+      # No service-link env vars: Kubernetes would inject CHROMA_PORT=tcp://... for the chroma
+      # Service, which Chroma reads as its own config and crashes on; nothing here needs them.
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        # chromadb/chroma:1.0.12 runs as root by default; run it as 1000 and let fsGroup
+        # make the PVC writable for that group.
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: chroma
+          # Same version as chromadb-client in api/ and indexer/ requirements: change both.
+          image: chromadb/chroma:1.0.12
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: PERSIST_DIRECTORY
+              value: /data
+            - name: IS_PERSISTENT
+              value: "TRUE"
+            - name: ANONYMIZED_TELEMETRY
+              value: "false"
+          startupProbe:
+            httpGet:
+              path: /api/v2/heartbeat
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /api/v2/heartbeat
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v2/heartbeat
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: chroma-data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: chroma-data
+        labels:
+          app.kubernetes.io/name: chroma
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 2Gi

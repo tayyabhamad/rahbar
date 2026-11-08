@@ -1,0 +1,107 @@
+# Weekly re-index, Monday 03:00 cluster time: the "re-index when the material changes"
+# case. The pod template is IDENTICAL to indexer-job.yaml (keep them in sync), so the
+# fetch initContainer picks up new or changed documents from sources.yaml and the indexer
+# writes a new index_generation, which invalidates every cached answer.
+#
+# Run it by hand at any time:
+#   kubectl create job --from=cronjob/reindex manual-reindex-1 -n rahbar
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: reindex
+  labels:
+    app.kubernetes.io/name: indexer
+spec:
+  schedule: "0 3 * * 1"
+  # Never two writers at once; a late start is skipped rather than queued.
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: indexer
+    spec:
+      backoffLimit: 6
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: indexer
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: indexer
+          automountServiceAccountToken: false
+          # No service-link env vars: Kubernetes would inject CHROMA_PORT=tcp://... for the chroma
+          # Service, which Chroma reads as its own config and crashes on; nothing here needs them.
+          enableServiceLinks: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            fsGroup: 10001
+            seccompProfile:
+              type: RuntimeDefault
+          initContainers:
+            - name: fetch
+              image: rahbar-indexer:dev
+              imagePullPolicy: IfNotPresent
+              command: ["sh", "-c", "cp -r /app/corpus-src/. /corpus/ && cd /corpus && python fetch.py"]
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                capabilities:
+                  drop:
+                    - ALL
+              volumeMounts:
+                - name: corpus
+                  mountPath: /corpus
+                - name: tmp
+                  mountPath: /tmp
+          containers:
+            - name: indexer
+              image: rahbar-indexer:dev
+              imagePullPolicy: IfNotPresent
+              envFrom:
+                - configMapRef:
+                    name: rahbar-config
+                # The key is read only when EMBED_PROVIDER=hosted (embeddings from the same endpoint).
+                - secretRef:
+                    name: rahbar-secret
+                    optional: true
+              env:
+                - name: CORPUS_DIR
+                  value: /corpus/raw
+              resources:
+                requests:
+                  cpu: 250m
+                  memory: 512Mi
+                limits:
+                  cpu: 1000m
+                  memory: 1536Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                capabilities:
+                  drop:
+                    - ALL
+              volumeMounts:
+                - name: corpus
+                  mountPath: /corpus
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: corpus
+              emptyDir: {}
+            - name: tmp
+              emptyDir: {}

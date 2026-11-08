@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)
@@ -16,6 +16,9 @@ class IndexerSettings:
     chunk_size: int
     chunk_overlap: int
     ollama_url: str
+    embed_provider: str = "ollama"      # EMBED_PROVIDER: ollama | hosted
+    hosted_base_url: str = ""           # OpenAI-compatible base URL for hosted embeddings
+    llm_api_key: str = field(default="", repr=False)   # from the Secret; never logged
 
 
 def get_settings() -> IndexerSettings:
@@ -28,4 +31,7 @@ def get_settings() -> IndexerSettings:
         chunk_size=int(os.environ.get("CHUNK_SIZE", 400)),
         chunk_overlap=int(os.environ.get("CHUNK_OVERLAP", 50)),
         ollama_url=os.environ.get("OLLAMA_URL", "http://host.minikube.internal:11434"),
+        embed_provider=os.environ.get("EMBED_PROVIDER", "ollama"),
+        hosted_base_url=os.environ.get("HOSTED_BASE_URL", ""),
+        llm_api_key=os.environ.get("LLM_API_KEY", ""),
     )

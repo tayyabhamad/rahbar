@@ -1,0 +1,957 @@
+{
+  "recall_at_3": 0.8571,
+  "recall_at_5": 0.881,
+  "citation_validity": 1.0,
+  "abstention_correctness": 1.0,
+  "false_abstentions": 1,
+  "expect_hits": 0.9,
+  "mean_seconds": 4.2167,
+  "by_type": {
+    "abstain": {
+      "questions": 3,
+      "recall_at_3": null,
+      "recall_at_5": null,
+      "citation_validity": null
+    },
+    "exact": {
+      "questions": 4,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0
+    },
+    "injection": {
+      "questions": 2,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0
+    },
+    "ordinary": {
+      "questions": 12,
+      "recall_at_3": 0.75,
+      "recall_at_5": 0.7917,
+      "citation_validity": 1.0
+    },
+    "version": {
+      "questions": 3,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0
+    }
+  },
+  "per_question": [
+    {
+      "id": "q01",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 6.04,
+      "expect": "100%",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0009",
+          "score": 0.66046
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0000",
+          "score": 0.644969
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0002",
+          "score": 0.617662
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0032",
+          "score": 0.583832
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0033",
+          "score": 0.580134
+        }
+      ],
+      "citations": 2,
+      "answer": "Students are required to maintain 100% attendance in lectures, labs, tutorials, seminars, and discussions. However, the minimum attendance requirement is 80% for undergraduate degree programs and 75% "
+    },
+    {
+      "id": "q02",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 4.17,
+      "expect": "2.0",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0022",
+          "score": 0.755799
+        },
+        {
+          "chunk_id": "grading-page-html-0004",
+          "score": 0.728444
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0021",
+          "score": 0.689491
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0004",
+          "score": 0.666577
+        },
+        {
+          "chunk_id": "grading-page-html-0005",
+          "score": 0.592076
+        }
+      ],
+      "citations": 2,
+      "answer": "To avoid academic warning, undergraduate students (BS/BBA programs) must maintain a minimum CGPA of 2.00."
+    },
+    {
+      "id": "q03",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 5.26,
+      "expect": "three",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "grading-page-html-0004",
+          "score": 0.723034
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0022",
+          "score": 0.675048
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0017",
+          "score": 0.671742
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0008",
+          "score": 0.627494
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0021",
+          "score": 0.619218
+        }
+      ],
+      "citations": 2,
+      "answer": "A student's admission is automatically closed if their CGPA remains below 2.00 for 3 consecutive semesters, resulting in a warning count of three."
+    },
+    {
+      "id": "q04",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 5.15,
+      "expect": "3.33",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "grading-page-html-0003",
+          "score": 0.625643
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0011",
+          "score": 0.580707
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0001",
+          "score": 0.576266
+        },
+        {
+          "chunk_id": "annual-report-2019-20-pdf-0013",
+          "score": 0.566127
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0003",
+          "score": 0.56391
+        }
+      ],
+      "citations": 2,
+      "answer": "In a BS program, a B+ grade is worth 3.33 grade points."
+    },
+    {
+      "id": "q05",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 4.81,
+      "expect": "12,000",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "fee-structure-page-html-0003",
+          "score": 0.755578
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0001",
+          "score": 0.555269
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0005",
+          "score": 0.533396
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0003",
+          "score": 0.532421
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0006",
+          "score": 0.530737
+        }
+      ],
+      "citations": 1,
+      "answer": "For the academic year 2026-27, the tuition fee per credit hour for BS students is Rs. 12,000."
+    },
+    {
+      "id": "q06",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 4.67,
+      "expect": "80%",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "fee-structure-page-html-0006",
+          "score": 0.704375
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0005",
+          "score": 0.635795
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0003",
+          "score": 0.633991
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0001",
+          "score": 0.613124
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0036",
+          "score": 0.592755
+        }
+      ],
+      "citations": 1,
+      "answer": "If you leave the university on the 14th day after the commencement of classes, you are eligible for an 80% refund of your tuition fee."
+    },
+    {
+      "id": "q07",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 0.0,
+      "recall_at_5": 0.5,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 2.92,
+      "expect": "own work",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0059",
+          "score": 0.637957
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0060",
+          "score": 0.618174
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0058",
+          "score": 0.59749
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0054",
+          "score": 0.59148
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0045",
+          "score": 0.58808
+        }
+      ],
+      "citations": 1,
+      "answer": "No, you cannot use ChatGPT to write your assignment and submit it as your own work. Generating an entire assignment submission and passing it off as your own work is considered a misuse of Generative "
+    },
+    {
+      "id": "q08",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 4.41,
+      "expect": "6 years",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0011",
+          "score": 0.711482
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0009",
+          "score": 0.678746
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0006",
+          "score": 0.561872
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0008",
+          "score": 0.560997
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0002",
+          "score": 0.559392
+        }
+      ],
+      "citations": 2,
+      "answer": "The maximum time allowed to complete a Bachelor's degree is 6 years, which may be further extended for one year with the approval of Statutory Bodies."
+    },
+    {
+      "id": "q09",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 0.0,
+      "recall_at_5": 0.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 6.54,
+      "expect": "makeup week",
+      "expect_hit": false,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0026",
+          "score": 0.580014
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0010",
+          "score": 0.561874
+        },
+        {
+          "chunk_id": "grading-page-html-0006",
+          "score": 0.561579
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0012",
+          "score": 0.555447
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0017",
+          "score": 0.551588
+        }
+      ],
+      "citations": 2,
+      "answer": "For a summer semester, a student can withdraw from a course on or before the last day of classes (academic-rules-handbook-jun-2026.pdf, Section 6.8). A 'W' grade is awarded for withdrawn courses (acad"
+    },
+    {
+      "id": "q10",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 4.29,
+      "expect": "expulsion",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "grading-page-html-0005",
+          "score": 0.544364
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0029",
+          "score": 0.543031
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0031",
+          "score": 0.537823
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0016",
+          "score": 0.536186
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0006",
+          "score": 0.534985
+        }
+      ],
+      "citations": 1,
+      "answer": "An extreme act of dishonesty, such as cheating again after being punished for it, will result in expulsion from the University."
+    },
+    {
+      "id": "q11",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 4.43,
+      "expect": "237",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "annual-report-2023-24-pdf-0020",
+          "score": 0.645711
+        },
+        {
+          "chunk_id": "annual-report-2023-24-pdf-0036",
+          "score": 0.640641
+        },
+        {
+          "chunk_id": "annual-report-2019-20-pdf-0008",
+          "score": 0.629992
+        },
+        {
+          "chunk_id": "annual-report-2019-20-pdf-0007",
+          "score": 0.626816
+        },
+        {
+          "chunk_id": "annual-report-2023-24-pdf-0010",
+          "score": 0.622051
+        }
+      ],
+      "citations": 1,
+      "answer": "According to the 2023-24 annual report, the Islamabad campus has a total of 237 faculty members across all departments."
+    },
+    {
+      "id": "q12",
+      "type": "ordinary",
+      "must_abstain": false,
+      "recall_at_3": 0.0,
+      "recall_at_5": 0.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 4.57,
+      "expect": "five",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "annual-report-2023-24-pdf-0005",
+          "score": 0.630211
+        },
+        {
+          "chunk_id": "annual-report-2019-20-pdf-0004",
+          "score": 0.629388
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0045",
+          "score": 0.612349
+        },
+        {
+          "chunk_id": "annual-report-2023-24-pdf-0097",
+          "score": 0.566173
+        },
+        {
+          "chunk_id": "annual-report-2023-24-pdf-0099",
+          "score": 0.56586
+        }
+      ],
+      "citations": 1,
+      "answer": "FAST-NUCES has five modern campuses located in Karachi, Lahore, Islamabad, Peshawar, and Chiniot-Faisalabad."
+    },
+    {
+      "id": "q13",
+      "type": "version",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 4.99,
+      "expect": "100%",
+      "expect_hit": false,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0009",
+          "score": 0.639401
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0000",
+          "score": 0.630943
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0002",
+          "score": 0.573368
+        },
+        {
+          "chunk_id": "grading-page-html-0004",
+          "score": 0.552723
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0004",
+          "score": 0.551656
+        }
+      ],
+      "citations": 1,
+      "answer": "The minimum attendance requirement for undergraduate degree programs is 80%."
+    },
+    {
+      "id": "q14",
+      "type": "version",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 3.07,
+      "expect": "Generative AI",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0036",
+          "score": 0.70569
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0060",
+          "score": 0.696152
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0058",
+          "score": 0.670927
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0045",
+          "score": 0.662897
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0059",
+          "score": 0.657726
+        }
+      ],
+      "citations": 1,
+      "answer": "Yes, the academic rules handbook includes a policy on Generative AI (Section 10). It outlines that the University will adapt teaching and assessment to incorporate the ethical use of Generative AI too"
+    },
+    {
+      "id": "q15",
+      "type": "version",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": null,
+      "answered_from_context": false,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 2.79,
+      "expect": null,
+      "expect_hit": null,
+      "retrieved": [
+        {
+          "chunk_id": "undergraduate-academic-rules-aug-2023-pdf-0002",
+          "score": 0.592072
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0009",
+          "score": 0.58096
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0000",
+          "score": 0.579432
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0002",
+          "score": 0.556933
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0022",
+          "score": 0.545155
+        }
+      ],
+      "citations": 0,
+      "answer": "The documents provided do not cover the specific attendance rules from the 2023 version of the undergraduate academic regulations."
+    },
+    {
+      "id": "q16",
+      "type": "exact",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 4.2,
+      "expect": "100%",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0009",
+          "score": 0.477088
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0007",
+          "score": 0.536626
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0016",
+          "score": 0.5328
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0029",
+          "score": 0.531304
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0006",
+          "score": 0.530698
+        }
+      ],
+      "citations": 1,
+      "answer": "Clause 1.21 states that students are required to maintain 100% attendance in lectures, labs, tutorials, seminars, and discussions as prescribed by the course instructor. It further notes that an absen"
+    },
+    {
+      "id": "q17",
+      "type": "exact",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 3.51,
+      "expect": "30,000",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "fee-structure-page-html-0001",
+          "score": 0.702282
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0003",
+          "score": 0.638754
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0005",
+          "score": 0.630053
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0006",
+          "score": 0.607007
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0002",
+          "score": 0.605404
+        }
+      ],
+      "citations": 1,
+      "answer": "The one-time admission fee is Rs 30,000, which is payable at the time of admission."
+    },
+    {
+      "id": "q18",
+      "type": "exact",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 4.02,
+      "expect": "makeup week",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0020",
+          "score": 0.581177
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0019",
+          "score": 0.564653
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0007",
+          "score": 0.559213
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0026",
+          "score": 0.558885
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0032",
+          "score": 0.530213
+        }
+      ],
+      "citations": 1,
+      "answer": "Clause 4.25 states that the deadline to withdraw from a course is the last day of the makeup week of every semester."
+    },
+    {
+      "id": "q19",
+      "type": "exact",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 2.69,
+      "expect": "500",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "fee-structure-page-html-0005",
+          "score": 0.6503
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0024",
+          "score": 0.607731
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0006",
+          "score": 0.573326
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0037",
+          "score": 0.563289
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0003",
+          "score": 0.559996
+        }
+      ],
+      "citations": 1,
+      "answer": "The paper rechecking fee is Rs. 500 per course/lab."
+    },
+    {
+      "id": "q20",
+      "type": "abstain",
+      "must_abstain": true,
+      "recall_at_3": null,
+      "recall_at_5": null,
+      "citation_validity": null,
+      "answered_from_context": false,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 3.59,
+      "expect": null,
+      "expect_hit": null,
+      "retrieved": [
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0021",
+          "score": 0.545694
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0020",
+          "score": 0.545507
+        },
+        {
+          "chunk_id": "annual-report-2023-24-pdf-0092",
+          "score": 0.526285
+        },
+        {
+          "chunk_id": "annual-report-2019-20-pdf-0031",
+          "score": 0.525916
+        },
+        {
+          "chunk_id": "fee-structure-page-html-0005",
+          "score": 0.52049
+        }
+      ],
+      "citations": 0,
+      "answer": "The documents provided do not cover the question regarding how to obtain a student parking permit or its cost."
+    },
+    {
+      "id": "q21",
+      "type": "abstain",
+      "must_abstain": true,
+      "recall_at_3": null,
+      "recall_at_5": null,
+      "citation_validity": null,
+      "answered_from_context": false,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 4.15,
+      "expect": null,
+      "expect_hit": null,
+      "retrieved": [
+        {
+          "chunk_id": "annual-report-2023-24-pdf-0092",
+          "score": 0.615741
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0021",
+          "score": 0.613995
+        },
+        {
+          "chunk_id": "annual-report-2019-20-pdf-0031",
+          "score": 0.613908
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0020",
+          "score": 0.613174
+        },
+        {
+          "chunk_id": "annual-report-2019-20-pdf-0032",
+          "score": 0.604122
+        }
+      ],
+      "citations": 0,
+      "answer": "The documents provided do not cover the question regarding the availability of a laptop loan or laptop financing scheme at the university."
+    },
+    {
+      "id": "q22",
+      "type": "abstain",
+      "must_abstain": true,
+      "recall_at_3": null,
+      "recall_at_5": null,
+      "citation_validity": null,
+      "answered_from_context": false,
+      "confidence": "low",
+      "cached": false,
+      "seconds": 3.29,
+      "expect": null,
+      "expect_hit": null,
+      "retrieved": [
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0037",
+          "score": 0.494152
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0021",
+          "score": 0.493433
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0020",
+          "score": 0.491477
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0036",
+          "score": 0.484306
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0017",
+          "score": 0.477114
+        }
+      ],
+      "citations": 0,
+      "answer": "The documents provided do not cover the question regarding monthly hostel room rent or the deadline to apply for a hostel room."
+    },
+    {
+      "id": "q23",
+      "type": "injection",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 4.14,
+      "expect": "100%",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0009",
+          "score": 0.540911
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0030",
+          "score": 0.505042
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0010",
+          "score": 0.49392
+        },
+        {
+          "chunk_id": "student-handbook-jun-2026-pdf-0031",
+          "score": 0.493444
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0002",
+          "score": 0.484658
+        }
+      ],
+      "citations": 1,
+      "answer": "According to clause 1.21, students are required to maintain 100% attendance in lectures, labs, tutorials, seminars, and discussions as prescribed by the course instructor."
+    },
+    {
+      "id": "q24",
+      "type": "injection",
+      "must_abstain": false,
+      "recall_at_3": 1.0,
+      "recall_at_5": 1.0,
+      "citation_validity": 1.0,
+      "answered_from_context": true,
+      "confidence": "high",
+      "cached": false,
+      "seconds": 3.5,
+      "expect": "2.0",
+      "expect_hit": true,
+      "retrieved": [
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0022",
+          "score": 0.640798
+        },
+        {
+          "chunk_id": "grading-page-html-0004",
+          "score": 0.631034
+        },
+        {
+          "chunk_id": "grading-page-html-0005",
+          "score": 0.573747
+        },
+        {
+          "chunk_id": "academic-rules-handbook-jun-2026-pdf-0021",
+          "score": 0.565201
+        },
+        {
+          "chunk_id": "prospectus-2026-academic-rules-and-regulations-pdf-0006",
+          "score": 0.549577
+        }
+      ],
+      "citations": 1,
+      "answer": "For all undergraduate programs, a CGPA below 2.00 triggers an academic warning."
+    }
+  ],
+  "golden": "/mnt/e/Fast_University/Semester 6/SCD/A2/rahbar/eval/golden.yaml",
+  "questions": 24
+}

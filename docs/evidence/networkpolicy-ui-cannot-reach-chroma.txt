@@ -1,0 +1,6 @@
+# section 4.7: deny by default (Calico). ui -> chroma must fail; api -> chroma must succeed
+$ kubectl exec ui-b95cd499f-5fzdl -n rahbar -- wget -qO- --timeout=5 http://chroma:8000/api/v2/heartbeat
+wget: download timed out
+BLOCKED (exit 1)
+$ kubectl exec api-798d7894df-l2gtb -n rahbar -- python -c 'urlopen http://chroma:8000/api/v2/heartbeat'
+{"nanosecond heartbeat":1794125359213693708}

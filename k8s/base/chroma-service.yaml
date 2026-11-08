@@ -1,0 +1,16 @@
+# ClusterIP only: the vector store is never exposed outside the cluster. CHROMA_HOST=chroma.
+apiVersion: v1
+kind: Service
+metadata:
+  name: chroma
+  labels:
+    app.kubernetes.io/name: chroma
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: chroma
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+      protocol: TCP

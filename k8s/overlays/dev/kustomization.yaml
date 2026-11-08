@@ -1,0 +1,23 @@
+# dev: minikube on a laptop. Images are built locally (`make images` tags them :dev and
+# runs `minikube image load`), pulled IfNotPresent (set in the base), and Ollama runs on
+# the host, so the host-egress NetworkPolicy component is included.
+#   kubectl apply -k k8s/overlays/dev      (or `make apply`)
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+components:
+  - ../../components/ollama-host
+
+images:
+  - name: rahbar-api
+    newName: rahbar-api
+    newTag: dev
+  - name: rahbar-indexer
+    newName: rahbar-indexer
+    newTag: dev
+  - name: rahbar-ui
+    newName: rahbar-ui
+    newTag: dev

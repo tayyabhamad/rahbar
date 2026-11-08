@@ -1,0 +1,22 @@
+# NOTE: `make images` builds the indexer with the repository root as the build context
+# (docker build -f indexer/Dockerfile .), so the root .dockerignore governs that build.
+# This file applies only if someone builds with indexer/ itself as the context.
+.git
+.gitignore
+.venv
+venv
+__pycache__
+**/__pycache__
+*.pyc
+.pytest_cache
+**/.pytest_cache
+.mypy_cache
+**/.mypy_cache
+.ruff_cache
+**/.ruff_cache
+tests
+Dockerfile
+.dockerignore
+*.md
+.env
+.env.*

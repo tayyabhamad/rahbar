@@ -1,0 +1,25 @@
+# section 4.6: the Service was not touched; its selector found the new pods by label
+$ kubectl get endpoints api -n rahbar   # 3 replicas
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME   ENDPOINTS                                                  AGE
+api    10.244.120.73:8000,10.244.120.74:8000,10.244.120.75:8000   5m51s
+
+$ kubectl scale deployment/api -n rahbar --replicas=5
+deployment.apps/api scaled
+Waiting for deployment "api" rollout to finish: 3 of 5 updated replicas are available...
+Waiting for deployment "api" rollout to finish: 4 of 5 updated replicas are available...
+deployment "api" successfully rolled out
+
+$ kubectl get endpoints api -n rahbar   # 5 replicas
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME   ENDPOINTS                                                              AGE
+api    10.244.120.73:8000,10.244.120.74:8000,10.244.120.75:8000 + 2 more...   5m56s
+
+  endpoint Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+  endpoint 10.244.120.73
+  endpoint 10.244.120.74
+  endpoint 10.244.120.75
+  endpoint 10.244.120.78
+  endpoint 10.244.120.79
+
+# note: the HPA (minReplicas 3) will scale back down when idle

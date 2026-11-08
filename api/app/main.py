@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 import time
 import uuid
 from collections.abc import AsyncIterator
@@ -17,10 +18,13 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 
 from .config import get_settings
+from .embedding import Embedder
 from .logjson import configure_logging, request_id_var
 from .providers.llm import get_provider
 from .retrieval import get_retriever
 from .routes import ask, health, metrics
+from .services.cache import SemanticCache
+from .services.readiness import check_readiness
 
 log = logging.getLogger("rahbar.api")
 
@@ -32,14 +36,32 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.settings = settings
     app.state.retriever = get_retriever(settings)
     app.state.provider = get_provider(settings)
-    # STARTER-TODO(4.4): compare the collection's embedding-model metadata with
-    # settings.embed_model here, and make /readyz fail on a mismatch.
+    app.state.cache = SemanticCache(settings) if settings.cache_enabled else None
+    app.state.expected_dimension = Embedder(settings).dimension
+    app.state.last_generation = None
     # This process only reads the index. The indexer Job writes it.
     log.info(
         "api started",
         extra={"retriever": settings.retriever, "llm_provider": settings.llm_provider,
-               "embed_model": settings.embed_model, "top_k": settings.top_k},
+               "embed_model": settings.embed_model, "embed_provider": settings.embed_provider,
+               "top_k": settings.top_k, "relevance_floor": settings.relevance_floor,
+               "cache": "redis" if app.state.cache else "disabled"},
     )
+
+    # Section 4.4: compare the collection's embedding model with ours once at startup and
+    # say so in the log. It runs in a background thread so the port opens at once: on a
+    # cold cluster the chroma Service has no endpoints yet and the first connection can
+    # hang for longer than the startupProbe window, which restarted the pod before it
+    # ever listened. The pod is never crashed for a mismatch either: /readyz keeps
+    # returning 503, so it sits at 0/1 READY with the conflict in its log.
+    def startup_check() -> None:
+        result = check_readiness(settings, app.state.retriever, app.state.cache,
+                                 app.state.expected_dimension)
+        log.info("startup readiness", extra={"ready": result.ready,
+                                             "not_ready_because": result.failed,
+                                             "checks": result.checks})
+
+    threading.Thread(target=startup_check, name="startup-check", daemon=True).start()
     yield
 
 

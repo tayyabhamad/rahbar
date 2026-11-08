@@ -1,0 +1,34 @@
+# Failure mode C (retrieval): TOP_K=1 vs shipped TOP_K=5, same 250/40 index
+# Local run 2026-11-08: local-hash-v1 embeddings, stub LLM, RELEVANCE_FLOOR=0.21, OCR off.
+# shipped : {'recall_at_3': 0.6429, 'recall_at_5': 0.7143, 'citation_validity': 1.0, 'abstention_correctness': 1.0, 'false_abstentions': 6}
+#           by type (r@3, r@5): {'abstain': (None, None), 'exact': (1.0, 1.0), 'injection': (0.75, 0.75), 'ordinary': (0.5833, 0.7083), 'version': (0.3333, 0.3333)}
+# broken  : {'recall_at_3': 0.5238, 'recall_at_5': 0.5238, 'citation_validity': 1.0, 'abstention_correctness': 1.0, 'false_abstentions': 6}
+#           by type (r@3, r@5): {'abstain': (None, None), 'exact': (1.0, 1.0), 'injection': (0.75, 0.75), 'ordinary': (0.4583, 0.4583), 'version': (0.0, 0.0)}
+#
+# eval/run_eval.py gate output for the broken run:
+#   - recall@5 0.5238 is 0.1905 below the baseline 0.7143 (allowed drop 0.05)
+# per question (id type r@5 answered_from_context best_score):
+q01 ordinary  r5=1.0 afc=True best=0.248125
+q02 ordinary  r5=0.5 afc=True best=0.262821
+q03 ordinary  r5=0.0 afc=True best=0.267122
+q04 ordinary  r5=0.5 afc=True best=0.273923
+q05 ordinary  r5=1.0 afc=True best=0.510356
+q06 ordinary  r5=1.0 afc=True best=0.321259
+q07 ordinary  r5=0.5 afc=False best=0.171848
+q08 ordinary  r5=0.0 afc=True best=0.259924
+q09 ordinary  r5=1.0 afc=True best=0.330585
+q10 ordinary  r5=0.0 afc=False best=0.150523
+q11 ordinary  r5=0.0 afc=False best=0.204798
+q12 ordinary  r5=0.0 afc=True best=0.269319
+q13 version   r5=0.0 afc=True best=0.23805
+q14 version   r5=0.0 afc=True best=0.374446
+q15 version   r5=0.0 afc=True best=0.292232
+q16 exact     r5=1.0 afc=False best=0.201143
+q17 exact     r5=1.0 afc=True best=0.464164
+q18 exact     r5=1.0 afc=False best=0.186439
+q19 exact     r5=1.0 afc=True best=0.444751
+q20 abstain   r5=None afc=False best=0.171594
+q21 abstain   r5=None afc=False best=0.208224
+q22 abstain   r5=None afc=False best=0.119789
+q23 injection r5=1.0 afc=False best=0.176915
+q24 injection r5=0.5 afc=True best=0.233648

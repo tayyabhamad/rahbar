@@ -1,0 +1,15 @@
+# CI settings: deterministic local embedder, stub generation, real Chroma retrieval.
+# The thresholds are lower because hashed bag-of-words cosine scores run lower than a
+# neural embedder's on the same text; the must-abstain gate in golden.fixture.yaml is
+# still real at 0.15.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rahbar-config
+data:
+  EMBED_MODEL: "local-hash-v1"
+  LLM_PROVIDER: "stub"
+  RETRIEVER: "chroma"
+  RELEVANCE_FLOOR: "0.15"
+  CACHE_THRESHOLD: "0.95"
+  CORPUS_DIR: "/corpus/raw"

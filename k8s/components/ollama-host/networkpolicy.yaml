@@ -1,0 +1,27 @@
+# api, indexer -> Ollama on the host, port 11434 (OLLAMA_URL=http://host.minikube.internal:11434).
+#
+# 192.168.49.1/32 is the host as seen from inside minikube's docker-driver network, which is
+# what host.minikube.internal resolves to. It sits inside the private ranges the base
+# internet rule excludes, hence this explicit rule. Confirm on your machine with:
+#   minikube ssh "grep host.minikube.internal /etc/hosts"
+# and change the cidr if it differs (another driver, or the prod cluster's host IP).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ollama-host-egress
+  labels:
+    app.kubernetes.io/name: rahbar
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values: ["api", "indexer"]
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 192.168.49.1/32
+      ports:
+        - protocol: TCP
+          port: 11434

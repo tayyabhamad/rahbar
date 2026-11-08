@@ -1,0 +1,27 @@
+# dev-hosted: minikube on a laptop with NO Ollama. Generation and embeddings both go to a
+# free-tier, OpenAI-compatible endpoint (section 3.5 "hosted"); the key lives in the
+# Secret created by `make secret` (never in a file). Defaults below are OpenRouter, which
+# serves chat and embeddings behind one key; Google AI Studio works the same way (see the
+# ConfigMap patch). Groq serves chat only: keep EMBED_PROVIDER=ollama with it.
+#   export LLM_API_KEY=...        (https://openrouter.ai/keys)
+#   make secret
+#   kubectl apply -k k8s/overlays/dev-hosted
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+images:
+  - name: rahbar-api
+    newName: rahbar-api
+    newTag: dev
+  - name: rahbar-indexer
+    newName: rahbar-indexer
+    newTag: dev
+  - name: rahbar-ui
+    newName: rahbar-ui
+    newTag: dev
+
+patches:
+  - path: configmap-patch.yaml

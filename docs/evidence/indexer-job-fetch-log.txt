@@ -1,0 +1,12 @@
+  fetch   Annual Report 2019-20
+          annual-report-2019-20.pdf, 891,216 bytes
+  fetch   Annual Report 2023-24
+          annual-report-2023-24.pdf, 5,100,456 bytes
+  fetch   Fee Structure page
+          fee-structure-page.html, 91,429 bytes
+  fetch   Grading page
+          grading-page.html, 95,673 bytes
+  fetch   Faculty Entrepreneurship and Technical Start-ups Policy
+          faculty-entrepreneurship-and-technical-start-ups-policy.pdf, 3,872,809 bytes
+
+9 documents in corpus/raw, manifest written to corpus/MANIFEST.md

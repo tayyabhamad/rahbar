@@ -1,0 +1,44 @@
+# section 4.4: change EMBED_MODEL in the ConfigMap, restart only the api, no re-index
+$ kubectl patch configmap rahbar-config -n rahbar --type merge -p '{"data":{"EMBED_MODEL":"dummy-768"}}'
+configmap/rahbar-config patched
+$ kubectl rollout restart deployment/api -n rahbar
+deployment.apps/api restarted
+$ kubectl get pods -n rahbar -l app.kubernetes.io/name=api   # new pods sit at 0/1 READY
+NAME                   READY   STATUS    RESTARTS   AGE
+api-5d6d4b57c7-ctsxv   0/1     Running   0          50s
+api-6566b68557-f58f5   1/1     Running   0          64s
+api-6566b68557-mf8hb   1/1     Running   0          55s
+api-6566b68557-xd6st   1/1     Running   0          60s
+
+$ kubectl logs api-5d6d4b57c7-ctsxv -n rahbar | grep 'embedding pin mismatch'
+{"ts": "2026-11-08T08:08:11Z", "level": "ERROR", "logger": "rahbar.readiness", "msg": "embedding pin mismatch", "request_id": "-", "collection_embed_model": "local-hash-v1", "api_embed_model": "dummy-768", "collection_dimension": 512, "api_dimension": null}
+
+$ kubectl exec api-5d6d4b57c7-ctsxv -n rahbar -- python -c 'urlopen /readyz'
+HTTP 503 {"status":"not ready","failed":"embedding_pin","checks":{"chroma":"reachable","collection":{"name":"rahbar","count":690},"embedding_pin":"collection was indexed with EMBED_MODEL='local-hash-v1' but this API is configured with EMBED_MODEL='dummy-768'","redis":"reachable"}}
+
+$ kubectl get endpoints api -n rahbar   # the old, still-ready pods keep serving: zero downtime
+Warning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice
+NAME   ENDPOINTS                                                  AGE
+api    10.244.120.83:8000,10.244.120.84:8000,10.244.120.85:8000   7m23s
+
+# revert
+$ kubectl patch configmap rahbar-config -n rahbar --type merge -p '{"data":{"EMBED_MODEL":"local-hash-v1"}}'
+configmap/rahbar-config patched
+deployment.apps/api restarted
+Waiting for deployment "api" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "api" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "api" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "api" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "api" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "api" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "api" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "api" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "api" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "api" rollout to finish: 1 old replicas are pending termination...
+deployment "api" successfully rolled out
+NAME                   READY   STATUS        RESTARTS   AGE
+api-6566b68557-mf8hb   1/1     Terminating   0          70s
+api-6566b68557-xd6st   1/1     Terminating   0          75s
+api-798d7894df-l2gtb   1/1     Running       0          5s
+api-798d7894df-nhqv8   1/1     Running       0          9s
+api-798d7894df-z7qlh   1/1     Running       0          14s

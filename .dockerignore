@@ -1,0 +1,34 @@
+# Root build context: used only by `docker build -f indexer/Dockerfile .` (the indexer
+# image needs indexer/ and corpus/fetch.py + corpus/sources.yaml). Everything else stays out.
+.git
+.github
+.gitignore
+.gitattributes
+.venv
+venv
+**/__pycache__
+__pycache__
+*.pyc
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+# The downloaded documents are fetched at run time by the Job's initContainer, never baked in.
+corpus/raw
+corpus/MANIFEST.md
+corpus/sources.example.yaml
+# Not part of the indexer image.
+docs
+k8s
+ui
+api
+eval
+scripts
+indexer/tests
+indexer/Dockerfile
+indexer/.dockerignore
+**/*.md
+Makefile
+.env
+.env.*
+*secret*.yaml
+kubeconfig

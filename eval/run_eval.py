@@ -8,7 +8,8 @@
 Exit code 0 when every gate passes, 1 when any fails. CI relies on that exit code.
 
 Given: talking to the API, reading the golden set, writing results.json, the exit
-code. Yours: the four functions marked STARTER-TODO. They are the evaluation.
+code. The evaluation itself is recall_at_k, citation_validity, summarise and gate;
+the matching rule is documented in docs/ARCHITECTURE.md ("Evaluation matching rule").
 """
 
 from __future__ import annotations
@@ -20,7 +21,7 @@ import time
 from pathlib import Path
 
 import httpx
-import yaml
+import yaml  # type: ignore[import-untyped]  # PyYAML ships no stubs; types-PyYAML not installed
 
 HERE = Path(__file__).resolve().parent
 
@@ -45,31 +46,234 @@ def ask(client: httpx.Client, api: str, question: str) -> dict:
     return response.json()
 
 
+# ---------------------------------------------------------------------------
+# Matching rule (docs/ARCHITECTURE.md, "Evaluation matching rule")
+# ---------------------------------------------------------------------------
+
+_SECTION_BOUNDARY = (" ", ".", ":")
+
+
+def _norm(value: object) -> str:
+    """Lower-case and collapse whitespace; None and non-strings become ''."""
+    if value is None:
+        return ""
+    return " ".join(str(value).split()).lower()
+
+
+def _source_matches(golden: object, retrieved: object) -> bool:
+    """Same file name, case-insensitive; a leading directory on either side is ignored."""
+    a = _norm(golden).replace("\\", "/").rsplit("/", 1)[-1]
+    b = _norm(retrieved).replace("\\", "/").rsplit("/", 1)[-1]
+    return bool(a) and a == b
+
+
+def _section_prefix(short: str, long: str) -> bool:
+    """`short` equals `long`, or is a prefix of it followed by a space, '.', ':' or the end.
+    Both must already be normalised. '5.4' matches '5.4 academic warning' and '5.4.1 ...'
+    but not '5.41 ...'."""
+    if short == long:
+        return True
+    if not long.startswith(short):
+        return False
+    return long[len(short):len(short) + 1] in _SECTION_BOUNDARY
+
+
+def _golden_matches(golden: dict, hit: dict) -> bool:
+    """Golden entry vs one retrieved passage. A `chunk_id` on the golden entry wins
+    outright; otherwise same source and the golden section is a prefix of the retrieved
+    section. A golden entry without a section matches on source alone."""
+    golden_id = _norm(golden.get("chunk_id"))
+    if golden_id and golden_id == _norm(hit.get("chunk_id")):
+        return True
+    if not _source_matches(golden.get("source"), hit.get("source")):
+        return False
+    wanted = _norm(golden.get("section"))
+    if not wanted:
+        return True
+    return _section_prefix(wanted, _norm(hit.get("section")))
+
+
+def _citation_matches(citation: dict, hit: dict) -> bool:
+    """Citation vs one retrieved passage: same source, and the sections equal or one is a
+    prefix of the other (the model may cite '5.4' for '5.4 Academic Warning', or quote the
+    full heading for a chunk labelled '5.4')."""
+    cited_id = _norm(citation.get("chunk_id"))
+    if cited_id and cited_id == _norm(hit.get("chunk_id")):
+        return True
+    if not _source_matches(citation.get("source"), hit.get("source")):
+        return False
+    cited = _norm(citation.get("section"))
+    found = _norm(hit.get("section"))
+    if not cited or not found:
+        return cited == found
+    return _section_prefix(cited, found) or _section_prefix(found, cited)
+
+
+def _dicts(value: object) -> list[dict]:
+    """Only the dict entries of a list; anything else (None, a string) is empty."""
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, dict)]
+
+
 def recall_at_k(relevant: list[dict], retrieved: list[dict], k: int) -> float | None:
     """Fraction of the relevant (source, section) pairs found in the top k retrieved.
     Return None when the question has no relevant passages (must-abstain questions)."""
-    # STARTER-TODO(5.2): implement. Decide how you match sections and say so in PIPELINE.md.
-    raise NotImplementedError("recall_at_k: see STARTER-TODO(5.2)")
+    wanted = _dicts(relevant)
+    if not wanted:
+        return None
+    top = _dicts(retrieved)[:max(k, 0)]
+    matched = sum(1 for entry in wanted if any(_golden_matches(entry, hit) for hit in top))
+    return matched / len(wanted)
 
 
 def citation_validity(response: dict) -> float | None:
     """Fraction of the response's citations that match a passage in response['retrieved'].
     Return None when there are no citations."""
-    # STARTER-TODO(5.3): implement.
-    raise NotImplementedError("citation_validity: see STARTER-TODO(5.3)")
+    if not isinstance(response, dict):
+        return None
+    citations = _dicts(response.get("citations"))
+    if not citations:
+        return None
+    retrieved = _dicts(response.get("retrieved"))
+    valid = sum(1 for c in citations if any(_citation_matches(c, hit) for hit in retrieved))
+    return valid / len(citations)
+
+
+# ---------------------------------------------------------------------------
+# Aggregation and the gate
+# ---------------------------------------------------------------------------
+
+def _mean(values: list[float]) -> float | None:
+    return round(sum(values) / len(values), 4) if values else None
+
+
+def _round(value: float | None) -> float | None:
+    return None if value is None else round(value, 4)
+
+
+def _per_question(row: dict) -> dict:
+    """One results row for a golden question; never raises on a missing field."""
+    raw_response = row.get("response")
+    response: dict = raw_response if isinstance(raw_response, dict) else {}
+    relevant = _dicts(row.get("relevant"))
+    retrieved = _dicts(response.get("retrieved"))
+    answer = response.get("answer")
+    answer_text = answer if isinstance(answer, str) else ""
+    expect = row.get("expect")
+    expect_hit: bool | None = None
+    if isinstance(expect, str) and expect.strip():
+        expect_hit = expect.strip().lower() in answer_text.lower()
+    return {
+        "id": row.get("id"),
+        "type": row.get("type") or "ordinary",
+        "must_abstain": bool(row.get("must_abstain", False)),
+        "recall_at_3": _round(recall_at_k(relevant, retrieved, 3)),
+        "recall_at_5": _round(recall_at_k(relevant, retrieved, 5)),
+        "citation_validity": _round(citation_validity(response)),
+        "answered_from_context": response.get("answered_from_context"),
+        "confidence": response.get("confidence"),
+        "cached": bool(response.get("cached", False)),
+        "seconds": row.get("seconds"),
+        "expect": expect,
+        "expect_hit": expect_hit,
+        "retrieved": [
+            {"chunk_id": hit.get("chunk_id"), "score": hit.get("score")} for hit in retrieved
+        ],
+        "citations": len(_dicts(response.get("citations"))),
+        "answer": answer_text[:200],
+    }
 
 
 def summarise(rows: list[dict]) -> dict:
     """Overall recall@3, recall@5, citation validity and abstention correctness, plus
     recall@5 broken down by question type. This dict becomes results.json."""
-    # STARTER-TODO(5.2, 5.3): implement.
-    raise NotImplementedError("summarise: see STARTER-TODO(5.2, 5.3)")
+    per_question = [_per_question(row) for row in rows if isinstance(row, dict)]
+
+    recall3 = [q["recall_at_3"] for q in per_question if q["recall_at_3"] is not None]
+    recall5 = [q["recall_at_5"] for q in per_question if q["recall_at_5"] is not None]
+    validity = [
+        q["citation_validity"] for q in per_question if q["citation_validity"] is not None
+    ]
+    must_abstain = [q for q in per_question if q["must_abstain"]]
+    declined = [q for q in must_abstain if q["answered_from_context"] is False]
+    false_abstentions = sum(
+        1 for q in per_question
+        if not q["must_abstain"] and q["answered_from_context"] is False
+    )
+    expected = [q for q in per_question if q["expect_hit"] is not None]
+    seconds = [float(q["seconds"]) for q in per_question
+               if isinstance(q["seconds"], (int, float))]
+
+    by_type: dict[str, dict] = {}
+    for name in sorted({str(q["type"]) for q in per_question}):
+        group = [q for q in per_question if str(q["type"]) == name]
+        by_type[name] = {
+            "questions": len(group),
+            "recall_at_3": _mean([q["recall_at_3"] for q in group
+                                  if q["recall_at_3"] is not None]),
+            "recall_at_5": _mean([q["recall_at_5"] for q in group
+                                  if q["recall_at_5"] is not None]),
+            "citation_validity": _mean([q["citation_validity"] for q in group
+                                        if q["citation_validity"] is not None]),
+        }
+
+    return {
+        "recall_at_3": _mean(recall3),
+        "recall_at_5": _mean(recall5),
+        "citation_validity": _mean(validity) if validity else 1.0,
+        "abstention_correctness": (
+            round(len(declined) / len(must_abstain), 4) if must_abstain else 1.0
+        ),
+        "false_abstentions": false_abstentions,
+        "expect_hits": (
+            round(sum(1 for q in expected if q["expect_hit"]) / len(expected), 4)
+            if expected else None
+        ),
+        "mean_seconds": _mean(seconds),
+        "by_type": by_type,
+        "per_question": per_question,
+    }
+
+
+def _number(value: object) -> float | None:
+    return float(value) if isinstance(value, (int, float)) and not isinstance(value, bool) \
+        else None
 
 
 def gate(results: dict, baseline: dict | None) -> list[str]:
     """Return one message per failed gate (section 5.4); an empty list means pass."""
-    # STARTER-TODO(5.4): implement, using the three constants at the top of this file.
-    raise NotImplementedError("gate: see STARTER-TODO(5.4)")
+    failures: list[str] = []
+
+    recall5 = _number(results.get("recall_at_5"))
+    base5 = _number(baseline.get("recall_at_5")) if isinstance(baseline, dict) else None
+    if base5 is not None and recall5 is not None:
+        drop = base5 - recall5
+        if drop > MAX_RECALL5_DROP + 1e-9:
+            failures.append(
+                f"recall@5 {recall5:.4f} is {drop:.4f} below the baseline {base5:.4f} "
+                f"(allowed drop {MAX_RECALL5_DROP:.2f})"
+            )
+    elif base5 is not None and recall5 is None:
+        failures.append(
+            f"recall@5 could not be computed (no question had relevant passages) but the "
+            f"baseline is {base5:.4f}"
+        )
+
+    abstention = _number(results.get("abstention_correctness"))
+    if abstention is None or abstention < REQUIRED_ABSTENTION:
+        shown = "missing" if abstention is None else f"{abstention:.4f}"
+        failures.append(
+            f"abstention correctness {shown} is below the required {REQUIRED_ABSTENTION:.2f}"
+        )
+
+    validity = _number(results.get("citation_validity"))
+    if validity is None or validity < MIN_CITATION_VALIDITY:
+        shown = "missing" if validity is None else f"{validity:.4f}"
+        failures.append(
+            f"citation validity {shown} is below the minimum {MIN_CITATION_VALIDITY:.2f}"
+        )
+    return failures
 
 
 def main() -> int:

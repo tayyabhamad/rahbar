@@ -1,0 +1,13 @@
+# The semantic cache survives a redis restart (appendonly) but a lost cache only costs
+# latency, so 1Gi and the default StorageClass are enough.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data
+  labels:
+    app.kubernetes.io/name: redis
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
