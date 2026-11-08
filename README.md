@@ -270,7 +270,8 @@ transport rules): `docs/CORPUS.md`.
 
 ## Screenshot
 
-![The chat UI answering a question with citations](docs/evidence/ui-answer.png)
+![RAHBAR chat UI answering through the Ingress on minikube](docs/evidence/ui-answer.jpg)
 
-<!-- TODO: capture docs/evidence/ui-answer.png from http://rahbar.local after the first
-     cluster run: one answered question with its citations and the cache chip visible. -->
+The chat page served by the `ui` Deployment through the Ingress on minikube, answering
+from the OCR'd corpus with `google/gemini-3.1-flash-lite` and `baai/bge-m3` embeddings
+(the `dev-hosted` overlay); citations name the retrieved passages.

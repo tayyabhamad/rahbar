@@ -1,28 +1,33 @@
 # Failure analysis: break one stage at a time
 
-Four of the six stages were broken on purpose, one at a time, against the same golden set
-(`eval/golden.yaml`, 24 questions) and the same shipped index (250/40). Runs are local
-(8 November 2026): `local-hash-v1` embeddings, the stub LLM, `RELEVANCE_FLOOR=0.21`, OCR
-off; the raw per-question output of each run is in `docs/evidence/failure-*.txt`. The
-healthy numbers these are compared with are the committed `eval/baseline.json`:
-recall@3 0.643, recall@5 0.714, citation validity 1.0, abstention correctness 1.0.
+Five of the six stages were broken on purpose, one at a time, against the same golden set
+(`eval/golden.yaml`, 24 questions) and the shipped chunking (250/40). Two setups were
+used (8 November 2026): **laptop** runs with `local-hash-v1` embeddings, the stub LLM,
+`RELEVANCE_FLOOR=0.21` and OCR off (healthy: recall@3 0.643, recall@5 0.714), and
+**cluster** runs on minikube with the `dev-hosted` overlay (`baai/bge-m3`,
+`google/gemini-3.1-flash-lite`, OCR on; healthy: recall@3 0.881, recall@5 0.929, the
+committed `eval/baseline.json`). Citation validity and abstention correctness were 1.0 in
+both healthy runs. Raw per-question output is in `docs/evidence/failure-*.txt` and the
+`results.*.json` files of each run.
 
-Stages D (prompt) and F (generation) need a real model to break; they are described at the
-end with the exact knob and the metric that would show them, to be run on the cluster.
-
-| Stage | How it was broken | recall@5 | abstention | What the gate said |
-| --- | --- | ---: | ---: | --- |
-| healthy | shipped configuration | 0.714 | 1.00 | pass |
-| A · Extraction | scanned PDFs indexed without OCR | n/a (2 documents gone) | 1.00 | version-type recall 0.33; q15 unanswerable |
-| B · Chunking | `CHUNK_SIZE=100`, `CHUNK_OVERLAP=0` | 0.643 | 0.67 | recall@5 7.1 points below baseline; abstention below 1.00 |
-| C · Retrieval | `TOP_K=1` | 0.524 | 1.00 | recall@5 19.0 points below baseline |
-| C · Retrieval | `EMBED_MODEL` changed on the api only | no traffic: pod not ready | | `/readyz` 503, `embedding pin mismatch` in the log |
-| E · Source | `SUPERSEDED_FILTER=false`, version question | 1.0 (fixtures) | 1.00 | pass: the gate cannot see this one |
+| Stage | Setup | How it was broken | recall@5 | abstention | What the gate said |
+| --- | --- | --- | ---: | ---: | --- |
+| healthy | laptop | shipped configuration | 0.714 | 1.00 | pass |
+| healthy | cluster | shipped configuration | 0.929 | 1.00 | pass |
+| A · Extraction | laptop vs cluster | scanned PDFs indexed without OCR | version 0.33 vs 1.00 | 1.00 | laptop: q15 unanswerable; cluster: fixed by OCR |
+| B · Chunking | laptop | `CHUNK_SIZE=100`, `CHUNK_OVERLAP=0` | 0.643 | 0.67 | recall@5 7.1 points below baseline; abstention below 1.00 |
+| C · Retrieval | laptop | `TOP_K=1` | 0.524 | 1.00 | recall@5 19.0 points below baseline |
+| C · Retrieval | laptop and cluster | `EMBED_MODEL` changed on the api only | no traffic: pod not ready | | `/readyz` 503, `embedding pin mismatch` in the log |
+| E · Source | laptop (fixtures) | `SUPERSEDED_FILTER=false`, version question | 1.0 | 1.00 | pass: the gate cannot see this one |
+| F · Generation | cluster | `TEMPERATURE=1.2` | 0.929 | 1.00 | pass: identical retrieval, the gate cannot see this one either |
 
 ## A · Extraction: index the scanned PDF without OCR
 
 **How.** `OCR_ENABLED=false` (or, as on this laptop, no tesseract binary) and index the
-corpus. **Symptom.** The ORIC start-ups policy produces 0 chunks and the 2023
+corpus. The healthy counterpart ran on the cluster, where the indexer image has
+tesseract: the same two documents came back with `ocr_pages: 24` and `ocr_pages: 8`,
+`lost_pages: 0`, 60 and 26 chunks, and the version-type recall went from 0.33 to 1.00
+(`docs/evidence/indexer-job-indexer-log.txt`, `eval/results.json`). **Symptom.** The ORIC start-ups policy produces 0 chunks and the 2023
 Undergraduate Academic Rules produce 1 chunk, the cover page; the indexer log shows
 `"lost_pages": 8` and `"lost_pages": 24` for them
 (`docs/evidence/failure-A-scanned-without-ocr.txt`). Any question about either document is
@@ -101,9 +106,31 @@ question explicitly asks for an older version (`api/app/retrieval/chroma.py`,
 version-type question's first citation carries `doc_version` of the current document; the
 recall gate alone will never catch it.
 
-## D · Prompt and F · Generation: to run on the cluster
+## F · Generation: temperature 1.2 (measured on the cluster)
 
-Both need a real model; the stub never reads the prompt.
+**How.** `TEMPERATURE=1.2` in the ConfigMap (shipped value 0.1), `kubectl rollout
+restart deployment/api`, then `make eval` against the same 250/40 index with
+`google/gemini-3.1-flash-lite`. **Symptom.** Nothing in the gate moves: recall@3 0.881,
+recall@5 0.929, citation validity 1.0, abstention 1.0, `expect` hits 0.85, exactly the
+healthy numbers, because retrieval is identical (the same chunk ids in the same order for
+all 24 questions) and JSON mode kept every reply well-formed (`rahbar_llm_retries_total`
+and `rahbar_fallbacks_total` stayed at 0). What did move is the text: 22 of 24 answers
+were worded differently from the low-temperature run, against 9 of 24 between two
+low-temperature runs of the same index, one confidence label changed (q09 medium to
+high), and one citation was dropped. The facts stayed right on this corpus, which is the
+handout's point in reverse: a higher temperature did not make the model wrong here, and
+temperature 0 would not have made it right where knowledge was missing. **Diagnosis.**
+Stage F, by elimination: the `answered` log lines show identical `chunk_ids` and `scores`
+across the two runs, so A to E are unchanged; only the model output varies. **Remedy.**
+`TEMPERATURE` back to 0.1 (`k8s/base/configmap.yaml`, with its one-line justification).
+**Had I not caused it:** the number that shows it is not in the gate at all; it is answer
+variance on repeated identical questions (and, with a weaker model than this one,
+`rahbar_llm_retries_total` climbing as replies stop parsing). The eval harness could add a
+repeat-and-compare step for exactly this stage.
+
+## D · Prompt: to run on the cluster
+
+Needs a real model; the stub never reads the prompt.
 
 * **D · Prompt.** Remove rule 1 ("use the supplied context") from `SYSTEM_PROMPT` in
   `api/app/providers/llm/prompt.py`. Expected symptom: `answered_from_context` stays `true`
@@ -112,9 +139,3 @@ Both need a real model; the stub never reads the prompt.
   and the answer is demoted, so `rahbar_abstentions_total{reason="no_valid_citation"}`
   climbs while retrieval scores are unchanged. Diagnosis: scores healthy, citations
   dropped: the fault is between retrieval and the reply, i.e. the prompt.
-* **F · Generation.** `TEMPERATURE=1.2`. Expected symptom: the same question gives
-  different answers on repeat, JSON validation failures rise
-  (`rahbar_llm_retries_total`, then `rahbar_fallbacks_total`), and confidence labels stop
-  matching the evidence. Diagnosis: retrieval identical across repeats (same `chunk_ids`
-  and `scores`), only the answer text moves; by the lecture's rule, check A to E first and
-  blame the model last.

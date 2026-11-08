@@ -97,8 +97,9 @@ Shipped: request `512Mi`, limit `1536Mi` (`k8s/base/indexer-job.yaml:77`, `:80`;
 (`indexer/pipeline/extract.py:44`, `:79-80`), and the chunk texts plus their vectors held
 in memory before the batched store (`indexer/pipeline/run.py:103-104`).
 
-**Measured** on minikube (metrics-server addon, 20 s samples while the Job ran,
-`docs/evidence/kubectl-top-indexer-samples.txt`): the indexer container peaked at
+**Measured** on minikube with `kubectl top pods -n rahbar --containers` (metrics-server
+addon, 20 s samples while the Job ran, `docs/evidence/kubectl-top-indexer-samples.txt`;
+steady state in `docs/evidence/kubectl-top-pods.txt`): the indexer container peaked at
 **1054 Mi** while OCR-ing the scanned PDFs and dropped to 557 Mi during chunking and
 storing; CPU sat at 998-999m, i.e. pinned at its 1000m limit (throttled, slow but
 alive). Limit `1536Mi` (`k8s/base/indexer-job.yaml`, `resources.limits.memory`) leaves a

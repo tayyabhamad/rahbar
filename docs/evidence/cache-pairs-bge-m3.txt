@@ -1,0 +1,14 @@
+model baai/bge-m3 dim 1024
+pair 0.780 q13 q15
+pair 0.693 q17 q20
+pair 0.692 q01 q13
+pair 0.682 q02 q24
+pair 0.674 q17 q19
+pair 0.665 q02 q03
+pair 0.649 q01 q23
+pair 0.641 q06 q17
+pair 0.641 q01 q15
+pair 0.637 q07 q14
+paraphrase 0.987 | What CGPA puts a student on academic warning? || Which CGPA places a student on academic warning?
+paraphrase 0.937 | What is the attendance requirement? || How much attendance is required?
+paraphrase 0.987 | How much is the admission fee? || What is the admission fee amount?

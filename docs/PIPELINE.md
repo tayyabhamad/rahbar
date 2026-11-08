@@ -122,26 +122,36 @@ ConfigMap are in this unit. The chunker is structure-aware (ADR 0002): sections,
 paragraphs, then sentences, with the section heading prefixed to every chunk and `overlap`
 tokens shared between neighbours in the same section. Table rows are never split.
 
-**Measured configurations** (real corpus, 24 golden questions, local-hash-v1, OCR off):
+**Measured configurations.** Cluster rows: minikube, OCR on, `baai/bge-m3`,
+`google/gemini-3.1-flash-lite`, each a fresh re-index Job from the CronJob template
+followed by `make eval` through the Ingress. Laptop rows: `local-hash-v1`, stub model,
+OCR off.
 
-| Size (tokens) | Overlap (tokens) | recall@3 | recall@5 | Chunks stored | Storage amplification |
-| ---: | ---: | ---: | ---: | ---: | ---: |
-| 250 | 40 | 0.643 | **0.714** | 585 | 1.20 |
-| 400 | 50 | 0.571 | 0.667 | 360 | 1.13 |
-| 600 | 80 | 0.643 | 0.667 | 266 | 1.13 |
-| 100 | 0 (failure mode B) | 0.595 | 0.643 | 1352 | 1.05 |
+| Setup | Size (tokens) | Overlap (tokens) | recall@3 | recall@5 | Chunks stored | Storage amplification |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| cluster | **250** | **40** | **0.881** | **0.929** | 703 | 1.18 |
+| cluster | 400 | 50 | 0.857 | 0.881 | 469 | 1.12 |
+| cluster | 600 | 80 | 0.857 | 0.881 | 370 | 1.11 |
+| laptop | 250 | 40 | 0.643 | 0.714 | 585 | 1.20 |
+| laptop | 400 | 50 | 0.571 | 0.667 | 360 | 1.13 |
+| laptop | 600 | 80 | 0.643 | 0.667 | 266 | 1.13 |
+| laptop | 100 | 0 (failure mode B) | 0.595 | 0.643 | 1352 | 1.05 |
 
 Storage amplification is stored tokens divided by original tokens (the lecture's
 150 / 120); the heading prefix and the overlap add tokens, the removal of headers, footers
 and page numbers takes some away (the fixture corpus comes out at 0.94).
 
-**Shipped: 250 / 40.** It is the only configuration that improves recall@5 (+4.8 points
-over 400/50) and it also has the best recall@3 together with 600/80. The cost is 63 % more
-chunks and 6 % more stored tokens, which at 585 chunks is irrelevant. The reason it wins
-with this embedder is lexical: a smaller chunk has fewer unrelated words diluting the
-bag-of-words vector. With `nomic-embed-text` the gap may narrow, so the cluster run should
-repeat the three rows (change `CHUNK_SIZE`/`CHUNK_OVERLAP` in the ConfigMap, `make index`,
-`make eval`) before the baseline is frozen. Fixed 100-token windows with no overlap (the
+**Shipped: 250 / 40.** With the dense embedder it leads both larger settings by 4.8
+points of recall@5 (0.929 against 0.881) and 2.4 points of recall@3, and the lexical
+laptop runs ranked the three the same way, so the choice does not depend on the embedder.
+The cost is 50 to 90 % more chunks and about 6 % more stored tokens (amplification 1.18
+against 1.11), which at 703 chunks is irrelevant. The mechanism is the same in both
+setups: a 250-token chunk is close to one clause or one table block, so a question about
+one rule is not diluted by its neighbours; at 400 and 600 tokens two questions (q07 and
+q12 in the ordinary type) fall out of the top 5 because their passages share a chunk with
+unrelated text. The 250/40 cluster numbers were reproduced exactly in a second
+re-index-and-evaluate pass (same 0.881 / 0.929), which is what makes the committed
+baseline trustworthy. Fixed 100-token windows with no overlap (the
 failure-mode B row) lose 7 points of recall@5 and let a must-abstain question clear the
 relevance floor: see `docs/FAILURE-ANALYSIS.md`.
 
