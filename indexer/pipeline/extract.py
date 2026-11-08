@@ -12,10 +12,10 @@ What this stage does (section 3.1):
   with pytesseract (tesseract-ocr); the page is marked `ocr=True`. If OCR is
   disabled or the binaries are missing, the loss is logged and the page is
   kept empty rather than silently dropped.
-* Two-column pages are detected by looking for a vertical gutter that almost no
-  word crosses; each column is then extracted on its own, left before right.
-  Without this, pdfplumber interleaves the columns line by line and every
-  clause number lands mid-sentence (the 2026 Academic Rules Handbook does this).
+* Page text comes from pdfminer's layout analysis (text boxes in reading order),
+  which keeps two-column blocks column by column. pdfplumber's plain text
+  interleaves the columns line by line and every clause number lands
+  mid-sentence (the 2026 Academic Rules Handbook does this).
 * HTML is reduced to headings, paragraphs and pipe-delimited table rows.
   Scripts, styles and navigation are discarded.
 * Markdown has its front matter removed (discover() already read it) and is
@@ -33,8 +33,8 @@ import re
 import sys
 import time
 from html.parser import HTMLParser
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any
 
 from .models import Document, Page
 
@@ -86,66 +86,23 @@ def _ocr_page(path: str, page_number: int) -> str | None:
         return None
 
 
-MIN_COLUMN_WORDS = 40
-MAX_GUTTER_CROSSING = 0.03     # fraction of words allowed to straddle the gutter
-MIN_COLUMN_SHARE = 0.15        # each column must hold at least this share of the words
+def _miner_pages(path: str) -> Iterator[str]:
+    """Page text from pdfminer's layout analysis, one string per page.
 
+    pdfminer groups characters into lines and lines into text boxes, then orders the
+    boxes in reading order (`boxes_flow`), which is what makes two-column pages come
+    out column by column instead of interleaved line by line. The FAST-NUCES handbooks
+    mix full-width paragraphs with two-column blocks on one page, so no single gutter
+    works; the box analysis does. pdfplumber is still used for tables and to decide
+    whether a page has a text layer at all.
+    """
+    from pdfminer.high_level import extract_pages
+    from pdfminer.layout import LAParams, LTTextContainer
 
-def _column_gutter(page: Any) -> float | None:
-    """The x position of a two-column gutter, or None for a single-column page."""
-    try:
-        words = page.extract_words()
-    except Exception:
-        return None
-    if len(words) < MIN_COLUMN_WORDS:
-        return None
-    x0, _, x1, _ = page.bbox
-    width = x1 - x0
-    best: tuple[int, float, int, int] | None = None
-    for percent in range(36, 66):
-        x = x0 + width * percent / 100
-        crossing = sum(1 for w in words if w["x0"] < x - 1 and w["x1"] > x + 1)
-        left = sum(1 for w in words if w["x1"] <= x + 1)
-        right = sum(1 for w in words if w["x0"] >= x - 1)
-        if best is None or crossing < best[0]:
-            best = (crossing, x, left, right)
-    if best is None:
-        return None
-    crossing, x, left, right = best
-    if crossing <= MAX_GUTTER_CROSSING * len(words) \
-            and min(left, right) >= MIN_COLUMN_SHARE * len(words):
-        return x
-    return None
-
-
-def _page_text(page: Any) -> tuple[str, bool]:
-    """Text of one page in reading order, and whether it was split into columns."""
-    gutter = _column_gutter(page)
-    if gutter is None:
-        return page.extract_text(x_tolerance=1.5, y_tolerance=3) or "", False
-    x0, top, x1, bottom = page.bbox
-    # Lines with a word straddling the gutter span the whole page (running headers,
-    # titles). They are extracted whole, first; cutting them at the gutter would leave
-    # two half-headers that the Clean stage could not recognise as repeating.
-    words = page.extract_words()
-    full_tops = sorted({round(w["top"]) for w in words
-                        if w["x0"] < gutter - 1 and w["x1"] > gutter + 1})
-
-    def _is_full(obj: dict[str, Any]) -> bool:
-        t = obj.get("top")
-        return t is not None and any(abs(round(t) - ft) <= 2 for ft in full_tops)
-
-    parts: list[str] = []
-    try:
-        if full_tops:
-            parts.append(page.filter(_is_full).extract_text(x_tolerance=1.5, y_tolerance=3)
-                         or "")
-        body = page.filter(lambda o: not _is_full(o)) if full_tops else page
-        for box in ((x0, top, gutter, bottom), (gutter, top, x1, bottom)):
-            parts.append(body.crop(box).extract_text(x_tolerance=1.5, y_tolerance=3) or "")
-    except Exception:
-        return page.extract_text(x_tolerance=1.5, y_tolerance=3) or "", False
-    return "\n".join(p for p in parts if p.strip()), True
+    laparams = LAParams(boxes_flow=0.5, line_margin=0.35, char_margin=2.0, word_margin=0.1)
+    for layout in extract_pages(path, laparams=laparams):
+        boxes = [el for el in layout if isinstance(el, LTTextContainer)]
+        yield "\n".join(el.get_text().strip() for el in boxes if el.get_text().strip())
 
 
 def _extract_pdf(path: str, source: str) -> list[Page]:
@@ -154,11 +111,21 @@ def _extract_pdf(path: str, source: str) -> list[Page]:
     pages: list[Page] = []
     ocr_pages = 0
     lost_pages = 0
-    column_pages = 0
+    layout_pages = 0
+    miner = _miner_pages(path)
     with pdfplumber.open(path) as pdf:
         for number, page in enumerate(pdf.pages, start=1):
-            text, two_columns = _page_text(page)
-            column_pages += two_columns
+            plain = page.extract_text(x_tolerance=1.5, y_tolerance=3) or ""
+            try:
+                text = next(miner)
+            except (StopIteration, Exception):   # pdfminer gave up on this page: keep plain
+                text = plain
+            else:
+                # Prefer the layout text; fall back when it is empty but plain is not.
+                if len(text.strip()) < MIN_TEXT_CHARS <= len(plain.strip()):
+                    text = plain
+                else:
+                    layout_pages += 1
             tables_text = ""
             try:
                 tables = page.extract_tables()
@@ -182,7 +149,7 @@ def _extract_pdf(path: str, source: str) -> list[Page]:
             pages.append(Page(source=source, page=number, text=(text + tables_text).strip(),
                               ocr=ocr))
     _log("extracted pdf", source=source, pages=len(pages), ocr_pages=ocr_pages,
-         lost_pages=lost_pages, two_column_pages=column_pages)
+         lost_pages=lost_pages, layout_pages=layout_pages)
     return pages
 
 

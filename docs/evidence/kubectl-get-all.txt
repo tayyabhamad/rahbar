@@ -1,0 +1,63 @@
+# kubectl get all -n rahbar -o wide  (2026-11-08T08:07Z, minikube, Calico, 3 GB node)
+NAME                         READY   STATUS      RESTARTS        AGE     IP              NODE       NOMINATED NODE   READINESS GATES
+pod/api-6566b68557-5md7f     1/1     Running     1 (4m35s ago)   5m49s   10.244.120.74   minikube   <none>           <none>
+pod/api-6566b68557-5sjsp     1/1     Running     1 (4m35s ago)   5m49s   10.244.120.75   minikube   <none>           <none>
+pod/api-6566b68557-wgs8m     1/1     Running     1 (4m35s ago)   5m49s   10.244.120.73   minikube   <none>           <none>
+pod/chroma-0                 1/1     Running     0               5m49s   10.244.120.72   minikube   <none>           <none>
+pod/indexer-mq2d8            0/1     Completed   0               5m48s   10.244.120.77   minikube   <none>           <none>
+pod/redis-5d948d4c5f-tdwcc   1/1     Running     0               5m49s   10.244.120.71   minikube   <none>           <none>
+pod/ui-b95cd499f-5fzdl       1/1     Running     0               5m49s   10.244.120.76   minikube   <none>           <none>
+
+NAME             TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE     SELECTOR
+service/api      ClusterIP   10.103.141.152   <none>        8000/TCP   5m50s   app.kubernetes.io/name=api
+service/chroma   ClusterIP   10.106.5.233     <none>        8000/TCP   5m50s   app.kubernetes.io/name=chroma
+service/redis    ClusterIP   10.111.130.31    <none>        6379/TCP   5m50s   app.kubernetes.io/name=redis
+service/ui       ClusterIP   10.98.161.6      <none>        8080/TCP   5m50s   app.kubernetes.io/name=ui
+
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE     CONTAINERS   IMAGES             SELECTOR
+deployment.apps/api     3/3     3            3           5m49s   api          rahbar-api:dev     app.kubernetes.io/name=api
+deployment.apps/redis   1/1     1            1           5m49s   redis        redis:7.4-alpine   app.kubernetes.io/name=redis
+deployment.apps/ui      1/1     1            1           5m49s   ui           rahbar-ui:dev      app.kubernetes.io/name=ui
+
+NAME                               DESIRED   CURRENT   READY   AGE     CONTAINERS   IMAGES             SELECTOR
+replicaset.apps/api-6566b68557     3         3         3       5m49s   api          rahbar-api:dev     app.kubernetes.io/name=api,pod-template-hash=6566b68557
+replicaset.apps/redis-5d948d4c5f   1         1         1       5m49s   redis        redis:7.4-alpine   app.kubernetes.io/name=redis,pod-template-hash=5d948d4c5f
+replicaset.apps/ui-b95cd499f       1         1         1       5m49s   ui           rahbar-ui:dev      app.kubernetes.io/name=ui,pod-template-hash=b95cd499f
+
+NAME                      READY   AGE     CONTAINERS   IMAGES
+statefulset.apps/chroma   1/1     5m49s   chroma       chromadb/chroma:1.0.12
+
+NAME                                      REFERENCE        TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
+horizontalpodautoscaler.autoscaling/api   Deployment/api   cpu: 3%/70%   3         8         3          5m49s
+
+NAME                    SCHEDULE    TIMEZONE   SUSPEND   ACTIVE   LAST SCHEDULE   AGE     CONTAINERS   IMAGES               SELECTOR
+cronjob.batch/reindex   0 3 * * 1   <none>     False     0        <none>          5m49s   indexer      rahbar-indexer:dev   <none>
+
+NAME                STATUS     COMPLETIONS   DURATION   AGE     CONTAINERS   IMAGES               SELECTOR
+job.batch/indexer   Complete   1/1           4m31s      5m49s   indexer      rahbar-indexer:dev   batch.kubernetes.io/controller-uid=bc8fcba3-fcd8-42d4-820d-d86acd03bcb5
+
+# pvc, ingress, networkpolicy, serviceaccounts
+NAME                                         STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+persistentvolumeclaim/chroma-data-chroma-0   Bound    pvc-28f03c47-5d70-45fa-ae21-a2d237be50e5   2Gi        RWO            standard       <unset>                 5m50s
+persistentvolumeclaim/redis-data             Bound    pvc-8055a124-5fdd-4456-8d40-0667399f37a4   1Gi        RWO            standard       <unset>                 5m50s
+
+NAME                               CLASS   HOSTS          ADDRESS        PORTS   AGE
+ingress.networking.k8s.io/rahbar   nginx   rahbar.local   192.168.49.2   80      5m50s
+
+NAME                                                   POD-SELECTOR                     AGE
+networkpolicy.networking.k8s.io/allow-dns-egress       <none>                           5m50s
+networkpolicy.networking.k8s.io/allow-ingress-to-api   app.kubernetes.io/name=api       5m50s
+networkpolicy.networking.k8s.io/allow-ingress-to-ui    app.kubernetes.io/name=ui        5m50s
+networkpolicy.networking.k8s.io/allow-to-chroma        app.kubernetes.io/name=chroma    5m50s
+networkpolicy.networking.k8s.io/allow-to-redis         app.kubernetes.io/name=redis     5m50s
+networkpolicy.networking.k8s.io/api-egress             app.kubernetes.io/name=api       5m50s
+networkpolicy.networking.k8s.io/default-deny           <none>                           5m50s
+networkpolicy.networking.k8s.io/indexer-egress         app.kubernetes.io/name=indexer   5m50s
+
+NAME                     AGE
+serviceaccount/api       5m51s
+serviceaccount/chroma    5m51s
+serviceaccount/default   5m51s
+serviceaccount/indexer   5m51s
+serviceaccount/redis     5m51s
+serviceaccount/ui        5m51s

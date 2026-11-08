@@ -43,6 +43,9 @@ _BULLET = re.compile(r"^\s*([-*•▪●○■◦]|\(?[a-zivx]{1,4}[.)]|\d{1,3}[
 _TABLE_ROW = re.compile(r"^\s*\|.*\|\s*$")
 _SENTENCE_END = re.compile(r"[.!?:;…\"”’)]\s*$")
 _HYPHEN_BREAK = re.compile(r"(\w)-\n([a-z])")
+# A clause number that pdfminer put on a line of its own ("1.9\nA theory course ...") is
+# re-attached to its sentence, so the clause stays one unit for the chunker.
+_CLAUSE_ALONE = re.compile(r"^(\d{1,2}(?:\.\d{1,2}){1,3}\.?)\n(?=\S)", re.M)
 _WS = re.compile(r"[ \t  -​]+")
 
 
@@ -59,7 +62,9 @@ def _repeating_lines(pages: list[Page]) -> set[str]:
         lines = [ln for ln in page.text.splitlines() if ln.strip()]
         edge = lines[:EDGE_LINES] + lines[-EDGE_LINES:] if len(lines) > EDGE_LINES * 2 else lines
         for sig in {_signature(ln) for ln in edge}:
-            if sig and len(sig) >= 3:
+            # A signature with no letters ("#.#", "# - #") is a clause number or a page
+            # number, not a running header; those are handled by their own rules.
+            if sig and len(sig) >= 3 and re.search(r"[a-z]", sig):
                 counts[sig] += 1
     threshold = max(REPEAT_MIN_PAGES, int(len(pages) * REPEAT_FRACTION))
     return {sig for sig, n in counts.items() if n >= threshold}
@@ -108,6 +113,7 @@ def clean_text(text: str, repeating: set[str] | None = None) -> str:
         kept.append(_WS.sub(" ", stripped))
     text = "\n".join(kept)
     text = _HYPHEN_BREAK.sub(r"\1\2", text)
+    text = _CLAUSE_ALONE.sub(r"\1 ", text)
     text = _join_wrapped_lines(text)
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
@@ -116,8 +122,12 @@ def clean_text(text: str, repeating: set[str] | None = None) -> str:
 def clean(doc: Document) -> Document:
     """Strip headers and footers that repeat on every page; keep headings and
     section boundaries, because chunking and citations depend on them."""
-    repeating = _repeating_lines(doc.pages)
+    # Re-attach lone clause numbers first, so "5.1" on its own line never looks like a
+    # repeating edge line and the clause reaches the chunker as one unit.
+    joined = [Page(source=p.source, page=p.page, text=_CLAUSE_ALONE.sub(r"\1 ", p.text),
+                   ocr=p.ocr) for p in doc.pages]
+    repeating = _repeating_lines(joined)
     cleaned = [Page(source=p.source, page=p.page, text=clean_text(p.text, repeating), ocr=p.ocr)
-               for p in doc.pages]
+               for p in joined]
     return Document(source=doc.source, doc_version=doc.doc_version, superseded=doc.superseded,
                     pages=cleaned)
