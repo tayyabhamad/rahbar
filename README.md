@@ -15,7 +15,7 @@ any citation that does not point at a retrieved passage, and caches validated an
 Redis. Everything runs in one Kubernetes namespace with default-deny network policies,
 readiness that depends on the index existing and on the embedding model matching the one
 that built it, and a CI gate that evaluates recall, citation validity and abstention on
-every pull request. Authors: Tayyab Hamad and `<partner name>` (SCD Assignment 2, due
+every pull request. Authors: Tayyab Hamad and Shayed Zain Ali (24i-3061) (SCD Assignment 2, due
 8 November 2026).
 
 ## Architecture
