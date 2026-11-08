@@ -74,7 +74,7 @@ make apply            # = kubectl apply -k k8s/overlays/dev
 
 # Hosted path instead (no Ollama): create the Secret from the shell, never from a file,
 # then apply the dev-hosted overlay in place of `make apply`.
-export LLM_API_KEY=...; make secret
+export LLM_API_KEY=...; make secret        # or put LLM_API_KEY=... in a gitignored .env, then: make secret
 kubectl apply -k k8s/overlays/dev-hosted
 
 # Wait for the stores, then the index, then the api (which sits at 0/1 until the index exists).

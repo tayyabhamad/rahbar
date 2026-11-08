@@ -2,6 +2,11 @@
 # Targets marked (needs yours) work once you have written the Dockerfiles or manifests.
 
 SHELL := /bin/bash
+# A gitignored .env at the repo root (KEY=value lines, e.g. LLM_API_KEY=...) is loaded when
+# present, so `make secret` needs no `export`. It is never committed (.gitignore) and never
+# read by the images: the key reaches the cluster only through the Kubernetes Secret.
+-include .env
+export LLM_API_KEY
 NS ?= rahbar
 TAG ?= dev
 PY ?= python3
