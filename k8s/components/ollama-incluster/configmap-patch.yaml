@@ -1,0 +1,10 @@
+# The two keys that differ from ollama-host: the provider name and where Ollama lives.
+# LLM_MODEL / EMBED_MODEL stay the base values; the ollama pod reads the same keys to know
+# which weights to pull, so there is one place to change the model.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rahbar-config
+data:
+  LLM_PROVIDER: "ollama-incluster"
+  OLLAMA_URL: "http://ollama:11434"

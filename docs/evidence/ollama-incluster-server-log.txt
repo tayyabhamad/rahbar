@@ -1,0 +1,15 @@
+	mirostat = 0, mirostat_lr = 0.100, mirostat_ent = 5.000, adaptive_target = -1.000, adaptive_decay = 0.900
+slot launch_slot_: id  0 | task 337 | processing task, is_child = 0
+slot   operator(): id  0 | task 337 | new prompt, n_ctx_slot = 8192, n_keep = 4, task.n_tokens = 1182
+slot   operator(): id  0 | task 337 | cached n_tokens = 597, memory_seq_rm [597, end)
+slot init_sampler: id  0 | task 337 | init sampler, took 0.12 ms, tokens: text = 1182, total = 1182
+[GIN] 2026/11/08 - 15:18:30 | 200 | 26.363µs |    192.168.49.2 | GET      "/"
+slot print_timing: id  0 | task 337 | n_gen =    157, tg =  51.90 t/s, tg_3s =  52.23 t/s
+slot print_timing: id  0 | task 337 | prompt eval time =    2260.71 ms /   585 tokens (    3.86 ms per token,   258.77 tokens per second)
+slot print_timing: id  0 | task 337 |        eval time =    4097.67 ms /   211 tokens (   19.51 ms per token,    51.25 tokens per second)
+slot print_timing: id  0 | task 337 |       total time =    6358.38 ms /   796 tokens
+slot print_timing: id  0 | task 337 |    graphs reused =        537
+slot print_timing: id  0 | task 337 |   graph reallocs =          0    /     0        (same size) / (changed size)
+slot      release: id  0 | task 337 | stop processing: n_tokens = 1392, truncated = 0
+srv  update_slots: all slots are idle
+[GIN] 2026/11/08 - 15:18:35 | 200 |    6.38s |  10.244.120.120 | POST     "/api/chat"

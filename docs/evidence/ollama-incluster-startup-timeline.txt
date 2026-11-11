@@ -1,0 +1,14 @@
+# kubectl get pod -l app.kubernetes.io/name=ollama, sampled every 10 s from apply
+20:16:00 +0s  ollama-84b8f749c6-28hgw   0/1   Init:0/1   0     1s
+20:16:10 +10s  ollama-84b8f749c6-28hgw   0/1   Init:0/1   0     11s
+20:16:20 +20s  ollama-84b8f749c6-28hgw   0/1   Init:0/1   0     21s
+20:16:31 +31s  ollama-84b8f749c6-28hgw   0/1   Init:0/1   0     31s
+20:16:41 +41s  ollama-84b8f749c6-28hgw   0/1   Init:0/1   0     42s
+20:16:51 +51s  ollama-84b8f749c6-28hgw   0/1   Init:0/1   0     52s
+20:17:01 +61s  ollama-84b8f749c6-28hgw   0/1   Init:0/1   0     62s
+20:17:11 +71s  ollama-84b8f749c6-28hgw   0/1   Init:0/1   0     72s
+20:17:21 +81s  ollama-84b8f749c6-28hgw   0/1   Init:0/1   0     82s
+20:17:31 +91s  ollama-84b8f749c6-28hgw   0/1   Init:0/1   0     92s
+20:17:41 +101s  ollama-84b8f749c6-28hgw   0/1   Init:0/1   0     102s
+20:17:51 +111s  ollama-84b8f749c6-28hgw   0/1   Init:0/1   0     112s
+20:18:02 +122s  ollama-84b8f749c6-28hgw   1/1   Running   0     2m3s

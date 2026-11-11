@@ -141,11 +141,12 @@ jobs:
           set -euo pipefail
           kustomize version
           docker pull -q "ghcr.io/yannh/kubeconform:${KUBECONFORM_VERSION}"
-          for overlay in prod ci dev dev-hosted; do
+          for overlay in prod ci dev dev-hosted dev-ollama-incluster; do
             echo "::group::k8s/overlays/${overlay}"
             kustomize build "k8s/overlays/${overlay}" \
               | docker run --rm -i "ghcr.io/yannh/kubeconform:${KUBECONFORM_VERSION}" \
                   -strict -ignore-missing-schemas -summary -
+            kustomize build "k8s/overlays/${overlay}" | bash scripts/check_namespace.sh
             echo "::endgroup::"
           done
 
@@ -395,7 +396,7 @@ jobs:
         run: |
           set -euo pipefail
           curl -fsS -H "Host: ${INGRESS_HOST}" "${INGRESS_URL}/" -o /dev/null -w 'ui: HTTP %{http_code}\n'
-          curl -fsS -H "Host: ${INGRESS_HOST}" -H 'Content-Type: application/json' \
+          curl -fsS --retry 10 --retry-delay 3 --retry-all-errors -H "Host: ${INGRESS_HOST}" -H 'Content-Type: application/json' \
             -X POST "${INGRESS_URL}/api/ask" \
             -d '{"question":"When is a student placed on academic warning?"}' \
             | python -m json.tool

@@ -1,0 +1,15 @@
+# Model weights. llama3.2:3b is about 2 GB and nomic-embed-text 0.3 GB; the PVC is what
+# makes a pod restart a re-load (minutes) instead of a re-download (longer), and it is why
+# the pull step is an initContainer that is a no-op when the weights are already here.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-models
+  namespace: rahbar
+  labels:
+    app.kubernetes.io/name: ollama
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 10Gi

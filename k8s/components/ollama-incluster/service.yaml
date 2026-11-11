@@ -1,0 +1,18 @@
+# OLLAMA_URL=http://ollama:11434 for the api and the indexer. ClusterIP: nothing outside
+# the namespace talks to the model server.
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  namespace: rahbar
+  labels:
+    app.kubernetes.io/name: ollama
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: ollama
+  ports:
+    - name: http
+      port: 11434
+      targetPort: http
+      protocol: TCP

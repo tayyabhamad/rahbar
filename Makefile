@@ -54,9 +54,10 @@ images: ## build the three images and load them into minikube
 	minikube image load rahbar-ui:$(TAG)
 
 validate: ## render every overlay with kustomize and check it against the Kubernetes schemas
-	@for o in dev prod ci; do \
+	@for o in dev dev-hosted dev-ollama-incluster prod ci; do \
 	  echo "== k8s/overlays/$$o"; \
 	  kustomize build k8s/overlays/$$o | kubeconform -strict -ignore-missing-schemas -summary || exit 1; \
+	  kustomize build k8s/overlays/$$o | bash scripts/check_namespace.sh || exit 1; \
 	done
 
 apply: ## apply the dev overlay

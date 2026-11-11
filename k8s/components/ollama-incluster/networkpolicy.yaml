@@ -1,0 +1,76 @@
+# The in-cluster Ollama paths, both directions of each (the base denies all egress too):
+#   api, indexer -> ollama 11434          (generation; embeddings when EMBED_PROVIDER=ollama)
+#   ollama       -> the internet 443      (registry.ollama.ai, weights pull in the initContainer)
+# DNS is already allowed for every pod by the base allow-dns-egress policy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-to-ollama
+  namespace: rahbar
+  labels:
+    app.kubernetes.io/name: ollama
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ollama
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: api
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: indexer
+      ports:
+        - protocol: TCP
+          port: 11434
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ollama-incluster-egress
+  namespace: rahbar
+  labels:
+    app.kubernetes.io/name: rahbar
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: In
+        values: ["api", "indexer"]
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ollama
+      ports:
+        - protocol: TCP
+          port: 11434
+---
+# Weights come from registry.ollama.ai over 443; private ranges are carved out as in the
+# base api-egress rule so this cannot reach other pods or the node network.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ollama-egress
+  namespace: rahbar
+  labels:
+    app.kubernetes.io/name: ollama
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ollama
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443

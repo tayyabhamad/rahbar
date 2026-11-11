@@ -37,9 +37,11 @@ retrieved passage is dropped and an answer left without citations is demoted to
 
 `ollama-host` and `ollama-incluster` differ only in `OLLAMA_URL` and the NetworkPolicy
 path: the host variant reaches the laptop through
-`k8s/components/ollama-host/networkpolicy.yaml:22-27`; an in-cluster Ollama would be a
-Service in the namespace with its own allow rule. The dev overlay ships `ollama-host`
-with `llama3.2:3b` (`configmap.yaml:13-16`).
+`k8s/components/ollama-host/networkpolicy.yaml:22-27`; the in-cluster variant (the
+brief's bonus mode) is the component `k8s/components/ollama-incluster`: an Ollama
+Deployment with a PVC for the weights pulled by an initContainer, a Service `ollama`,
+and its own allow rules (`networkpolicy.yaml` there). The dev overlay ships `ollama-host`
+with `llama3.2:3b` (`configmap.yaml:13-16`); `dev-ollama-incluster` ships the component.
 
 ### The embedding pin
 Embeddings are not a provider choice: `EMBED_MODEL` is one ConfigMap key read by both
@@ -107,9 +109,15 @@ refuses readiness on a mismatch (`api/app/services/readiness.py:36-48`, `:76-86`
   the local option to be real.
 * **Ollama in the cluster as a Deployment.** Keeps everything inside the namespace, but
   a 3B model wants 3 to 4 GB of RAM and `make cluster` gives minikube 6 GB in total
-  (`Makefile:39`) for Chroma, Redis, three API pods and the ingress controller; the
-  `ollama-incluster` value and the Service-based path are kept so it is a ConfigMap
-  change on a bigger node.
+  (`Makefile:39`) for Chroma, Redis, three API pods and the ingress controller. Not the
+  default for that reason, but shipped as the optional component
+  `k8s/components/ollama-incluster` (overlay `dev-ollama-incluster`) and exercised on this
+  laptop's 3 GB node with `qwen2.5:0.5b` (`docs/evidence/ollama-incluster-*.txt`): Ready
+  in 2 min 3 s, grounded answers in 7 to 14 s on CPU, 913 Mi resident; the startupProbe
+  with `failureThreshold: 30` is what lets the weights load without the liveness probe
+  killing the pod. The same run showed why the model size matters more than where it
+  runs: the 0.5B model answered the must-abstain question from its training data
+  (docs/ARCHITECTURE.md, "In-cluster Ollama").
 * **Ask for JSON in the prompt and parse leniently.** Small models are known to add
   prose or a trailing comment around the object, which makes the retry routine rather
   than rare. Constrained decoding (`format=`) prevents that at the decoder; the Pydantic

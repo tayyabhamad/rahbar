@@ -1,0 +1,27 @@
+# First attempt at the in-cluster Ollama overlay, 8 Nov 2026 19:53 PKT. The component's objects were
+# created without a namespace (the base's namespace transformer does not cover component resources),
+# so they landed in 'default': the api in 'rahbar' could not resolve the Service, and the pod in
+# 'default' could not find the ConfigMap. Fixed by metadata.namespace on every component resource
+# and scripts/check_namespace.sh in 'make validate' and CI.
+
+=== apply scratch overlay (base + ollama-incluster component, small model)
+serviceaccount/ollama created
+service/ollama created
+persistentvolumeclaim/ollama-models created
+deployment.apps/ollama created
+networkpolicy.networking.k8s.io/allow-ollama-incluster-egress created
+networkpolicy.networking.k8s.io/allow-to-ollama created
+networkpolicy.networking.k8s.io/ollama-egress created
+=== follow the ollama pod
+# kubectl get pod -l app.kubernetes.io/name=ollama, sampled every 10 s from apply
+No resources found in rahbar namespace.
+error: error from server (NotFound): deployments.apps "ollama" not found in namespace "rahbar"
+ollama-incluster qwen2.5:0.5b http://ollama:11434 hosted baai/bge-m3
+# POST /api/ask with LLM_PROVIDER=ollama-incluster, LLM_MODEL=qwen2.5:0.5b, OLLAMA_URL=http://ollama:11434
+...
+20:13:46 +1209s  No resources found in rahbar namespace.
+
+# kubectl -n default (where they actually were):
+pod/ollama-84b8f749c6-4v66p   0/1     Init:CreateContainerConfigError   0          21m
+  Warning  Failed   kubelet  spec.initContainers{pull-weights}: Error: configmap "rahbar-config" not found
+networkpolicy allow-ollama-host-egress   7h13m   <- the merged ollama-host component had the same flaw

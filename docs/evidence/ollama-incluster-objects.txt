@@ -1,0 +1,32 @@
+NAME                     READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/ollama   1/1     1            1           2m3s
+
+NAME                                  STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+persistentvolumeclaim/ollama-models   Bound    pvc-6913e17c-4d18-4860-8dcd-cb64e7d165c5   10Gi       RWO            standard       <unset>                 2m3s
+
+NAME             TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)     AGE
+service/ollama   ClusterIP   10.98.88.40   <none>        11434/TCP   2m3s
+
+NAME                    AGE
+serviceaccount/ollama   2m3s
+
+NAME                            POD-SELECTOR                              AGE
+allow-dns-egress                <none>                                    7h16m
+allow-ingress-to-api            app.kubernetes.io/name=api                7h16m
+allow-ingress-to-ui             app.kubernetes.io/name=ui                 7h16m
+allow-ollama-incluster-egress   app.kubernetes.io/name in (api,indexer)   2m2s
+allow-to-chroma                 app.kubernetes.io/name=chroma             7h16m
+allow-to-ollama                 app.kubernetes.io/name=ollama             2m2s
+allow-to-redis                  app.kubernetes.io/name=redis              7h16m
+api-egress                      app.kubernetes.io/name=api                7h16m
+default-deny                    <none>                                    7h16m
+indexer-egress                  app.kubernetes.io/name=indexer            7h16m
+ollama-egress                   app.kubernetes.io/name=ollama             2m2s
+
+NAME                      READY   STATUS      RESTARTS      AGE     IP               NODE       NOMINATED NODE   READINESS GATES
+api-587d76cd8c-8mwk6      1/1     Running     0             2m2s    10.244.120.120   minikube   <none>           <none>
+chroma-0                  1/1     Running     1 (31m ago)   7h16m   10.244.120.114   minikube   <none>           <none>
+indexer-zrmml             0/1     Completed   0             24m     10.244.120.116   minikube   <none>           <none>
+ollama-84b8f749c6-28hgw   1/1     Running     0             2m3s    10.244.120.119   minikube   <none>           <none>
+redis-5d948d4c5f-tdwcc    1/1     Running     1 (31m ago)   7h16m   10.244.120.112   minikube   <none>           <none>
+ui-b95cd499f-5fzdl        1/1     Running     1 (31m ago)   7h16m   10.244.120.110   minikube   <none>           <none>

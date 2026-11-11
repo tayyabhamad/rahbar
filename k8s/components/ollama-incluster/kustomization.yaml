@@ -1,0 +1,19 @@
+# Kustomize component: Ollama INSIDE the cluster (the brief's bonus mode `ollama-incluster`).
+# A Deployment with a PVC for the weights, a ClusterIP Service, the NetworkPolicy paths
+# api/indexer -> ollama and ollama -> registry.ollama.ai, and the ConfigMap keys that point
+# the api and the indexer at it. Mutually exclusive with ../ollama-host.
+#
+# Memory: a 3B model wants 3 to 4 GB for itself, so start minikube with --memory=8192
+# (docs/ARCHITECTURE.md "Overlays"); the dev-ollama-incluster overlay includes this.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+resources:
+  - serviceaccount.yaml
+  - pvc.yaml
+  - deployment.yaml
+  - service.yaml
+  - networkpolicy.yaml
+
+patches:
+  - path: configmap-patch.yaml

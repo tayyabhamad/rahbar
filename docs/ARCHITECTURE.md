@@ -11,7 +11,7 @@ user ──> Ingress (rahbar.local) ──┬── /     ──> ui  (nginx, De
                                                  │ reads             │ cache            │ generate
                                                  v                   v                  v
                                      chroma (StatefulSet x1, PVC)  redis (Deployment + PVC)   LLM provider
-                                                 ^                                      (ollama-host | hosted)
+                                                 ^                                      (ollama-host | ollama-incluster | hosted)
                                                  │ writes (only writer)
                                      indexer (Job + weekly CronJob: fetch, extract, clean, chunk, embed, store)
 ```
@@ -32,6 +32,7 @@ Everything lives in the namespace `rahbar`.
 | Job | `indexer` | image `rahbar-indexer`, `restartPolicy: OnFailure`, `backoffLimit: 6`, `ttlSecondsAfterFinished: 3600` |
 | CronJob | `reindex` | weekly (`0 3 * * 1`), identical pod template to the Job; `concurrencyPolicy: Forbid` |
 | Service x4 | `api`, `ui`, `chroma`, `redis` | all `ClusterIP`; chroma and redis are never NodePort or LoadBalancer |
+| Service (bonus) | `ollama` | `ClusterIP` 11434, only with the `ollama-incluster` component |
 | Ingress | `rahbar` | host `rahbar.local`; `/api` (Prefix) to `api:8000`, `/` (Prefix) to `ui:8080`; `ingressClassName: nginx` |
 | HPA | `api` | `minReplicas: 3`, `maxReplicas: 8`, CPU 70 % |
 | ServiceAccount x4 | `api`, `ui`, `chroma`, `redis`, `indexer` | `automountServiceAccountToken: false` everywhere |
@@ -135,6 +136,8 @@ Default deny ingress and egress for every pod in the namespace, then:
 | every pod | kube-dns in `kube-system` | 53 UDP/TCP |
 | api, indexer | the host (Ollama on the laptop), `ipBlock` for the minikube host IP | 11434 |
 | api, indexer | the internet (hosted provider, corpus fetch) | 443, 80 |
+| api, indexer | `ollama` Service (in-cluster Ollama, bonus component `k8s/components/ollama-incluster`) | 11434 |
+| ollama | the internet (registry.ollama.ai, the weights pull in its initContainer) | 443 |
 
 The ui pod can reach nothing but the Ingress controller's requests coming in.
 
@@ -168,6 +171,47 @@ image names are set with `kustomize edit set image` in `cd.yml`. Never `:latest`
 | `k8s/overlays/dev` | minikube on a laptop | images `:dev`, `IfNotPresent`; Ollama host egress ipBlock |
 | `k8s/overlays/prod` | the CD deploy target | images from Docker Hub by SHA |
 | `k8s/overlays/ci` | the `e2e-eval` job on kind | `EMBED_MODEL=local-hash-v1`, `LLM_PROVIDER=stub`, `RETRIEVER=chroma`, fixtures ConfigMap at `/corpus/raw`, no initContainer, smaller requests |
+| `k8s/overlays/dev-hosted` | minikube with no Ollama | `LLM_PROVIDER=hosted`, `EMBED_PROVIDER=hosted` (OpenRouter: `google/gemini-3.1-flash-lite`, `baai/bge-m3`), the key from the Secret |
+| `k8s/overlays/dev-ollama-incluster` | minikube with Ollama inside the cluster (bonus) | component `ollama-incluster`: Ollama Deployment + 10Gi PVC + Service + its NetworkPolicies, `LLM_PROVIDER=ollama-incluster`, `OLLAMA_URL=http://ollama:11434`; needs `minikube start --memory=8192` for `llama3.2:3b` |
+
+### In-cluster Ollama (bonus mode)
+
+`k8s/components/ollama-incluster` is a kustomize component, mutually exclusive with
+`ollama-host`. It adds one Deployment (`ollama`, 1 replica, `Recreate` because the weights
+PVC is `ReadWriteOnce`), the PVC `ollama-models`, a fifth ClusterIP Service `ollama:11434`,
+a ServiceAccount, three NetworkPolicies (api/indexer to ollama, ollama to the internet on
+443 for the pull, and the matching egress rule on api and indexer) and a ConfigMap patch
+for `LLM_PROVIDER` and `OLLAMA_URL`. The pod reads `LLM_MODEL`, `EMBED_MODEL` and
+`EMBED_PROVIDER` from the same ConfigMap as the api, so the model is changed in one place.
+
+Two details carry the design. First, the weights are pulled by an **initContainer** that
+starts a private `ollama serve` on 127.0.0.1, runs `ollama pull` onto the PVC and exits;
+on a restart it finds the layers and finishes in seconds, and the serving container never
+has to download anything. Second, the **startupProbe** is `ollama show $LLM_MODEL` with
+`failureThreshold: 30` and `periodSeconds: 10`: loading a 3B model on a laptop CPU takes
+minutes, and a liveness probe active during that window would restart the pod before it
+ever served, for ever. Liveness and readiness are plain `GET /` on 11434 and start only
+after the startup probe has passed. The container runs as uid 1000 with a read-only root
+filesystem; `OLLAMA_MODELS` and `HOME` point at the PVC.
+
+**Measured (8 November 2026, this laptop's 3 GB minikube node, so `qwen2.5:0.5b` in place
+of `llama3.2:3b`, the api scaled to one replica; `docs/evidence/ollama-incluster-*.txt`).**
+From `kubectl apply` to `1/1 Running` took 2 min 3 s: the initContainer pulled 397 MB of
+weights onto the PVC in about 100 s and the startup probe passed on its first or second
+attempt once `ollama serve` had loaded them; no restart, no liveness kill. The api reached
+`http://ollama:11434/api/chat` through the new NetworkPolicy pair and answered through the
+Ingress in 14.1 s, 10.2 s and 7.3 s (CPU only, 796 tokens of prompt and answer on the last
+one); `kubectl top` showed the ollama container at 913 Mi and 1.6 cores while generating,
+the node at 70 % memory. Two answers were right and grounded ("2.0" for the warning CGPA,
+"80%" for attendance, each with two valid citations). The third, the must-abstain parking
+question, is the lesson: the 0.5B model answered from its training data and the pipeline's
+guardrails did not catch it, because the retrieved chunks scored 0.457, just over the 0.45
+floor, so there were "valid" citations to attach. A 3B model refuses this question (the
+hosted and stub runs abstain correctly); below that size the abstention rule in the prompt
+is not reliably followed, which is why the shipped `LLM_MODEL` stays `llama3.2:3b` and why
+the eval's abstention gate exists. The first attempt at this overlay also found a real bug,
+fixed in the same change: component resources rendered without a namespace
+(`docs/evidence/ollama-incluster-namespace-bug.txt`, `scripts/check_namespace.sh`).
 
 Apply order (also in the README): namespace, then the overlay (`kubectl apply -k`), wait
 for chroma and redis, run the indexer Job, wait for it, then `kubectl rollout status
